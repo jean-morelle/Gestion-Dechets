@@ -1,0 +1,90 @@
+@startuml
+title Diagramme de Description Textuelle - Faire une Demande de Collecte
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+database "Base de données" as DB
+actor "Administrateur" as Admin
+actor "Collecteur" as Collecteur
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur "Demande de collecte"
+System -> Citoyen: Affiche le formulaire de demande
+
+Citoyen -> System: Sélectionne le type de déchets
+Citoyen -> System: Indique la quantité estimée
+Citoyen -> System: Sélectionne l'unité de mesure
+Citoyen -> System: Décrit les déchets à collecter
+Citoyen -> System: Indique la localisation précise
+Citoyen -> System: Sélectionne la date souhaitée
+Citoyen -> System: Précise la plage horaire préférée
+
+note over Citoyen, System: **Géolocalisation automatique (optionnel)**
+Citoyen -> System: Autorise l'accès à la position
+System -> System: Remplit automatiquement l'adresse
+Citoyen -> System: Modifie si nécessaire
+
+Citoyen -> System: Télécharge des photos des déchets
+Citoyen -> System: Ajoute des instructions spéciales
+Citoyen -> System: Indique ses coordonnées de contact
+
+System -> System: Vérifie la disponibilité pour la date
+System -> Citoyen: Propose des créneaux alternatifs si nécessaire
+Citoyen -> System: Confirme ou modifie sa demande
+
+Citoyen -> System: Clique sur "Soumettre la demande"
+System -> System: Valide les informations saisies
+System -> DB: Enregistre la demande
+System -> System: Génère un numéro de référence
+
+System -> Admin: Envoie une notification
+System -> Citoyen: Affiche message de confirmation
+System -> Citoyen: Attribue un numéro de suivi
+System -> Citoyen: Envoie un email de confirmation
+
+Admin -> Admin: Planifie la collecte
+Admin -> Collecteur: Assigne la collecte
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **2a. Collecte urgente**
+Citoyen -> System: Sélectionne "Urgente"
+System -> System: Propose des créneaux prioritaires
+System -> Citoyen: Informe des frais supplémentaires possibles
+Citoyen -> System: Confirme ou annule
+
+note over Citoyen, System: **3b. Date non disponible**
+System -> DB: Vérifie la disponibilité
+DB -> System: Date non disponible
+System -> Citoyen: Propose des dates alternatives
+Citoyen -> System: Choisit une autre date
+System -> Citoyen: Affiche les prochaines disponibilités
+
+note over Citoyen, System: **4a. Instructions d'accès spéciales**
+Citoyen -> System: Indique "Accès difficile"
+System -> Citoyen: Demande des détails supplémentaires
+Citoyen -> System: Fournit les détails
+System -> Citoyen: Informe des frais supplémentaires possibles
+
+note over Citoyen, System: **5a. Demande en dehors des heures de service**
+System -> System: Vérifie les heures de service
+System -> Citoyen: Informe que la demande sera traitée le prochain jour ouvré
+System -> Citoyen: Envoie accusé de réception automatique
+System -> System: Met la demande en file d'attente
+
+note over Citoyen, System: **6a. Demande similaire récente**
+System -> DB: Vérifie les demandes similaires récentes
+DB -> System: Retourne demande similaire trouvée
+System -> Citoyen: Propose de consulter la demande existante
+Citoyen -> System: Confirme ou modifie sa demande
+
+note over Citoyen, System: **7a. Demande refusée**
+Admin -> System: Refuse la demande (motif technique, sécurité)
+System -> Citoyen: Notification avec explication
+Citoyen -> System: Peut soumettre une nouvelle demande modifiée
+
+@enduml
+
+
+

@@ -1,0 +1,56 @@
+@startuml
+title Diagramme de Sequence - Citoyen
+
+actor Citoyen
+participant "Interface Web" as UI
+participant "CitoyenController" as CC
+participant "Base de Donnees" as DB
+
+== Connexion ==
+Citoyen -> UI: Se connecter
+UI -> CC: Authentification
+CC -> DB: Verifier credentials
+DB --> CC: Utilisateur valide
+CC --> UI: Session creee
+UI --> Citoyen: Acces au dashboard
+
+== Signalement d'un probleme ==
+Citoyen -> UI: Cliquer "Signaler probleme"
+UI -> CC: Afficher formulaire
+CC --> UI: Formulaire de signalement
+Citoyen -> UI: Remplir formulaire + photo
+UI -> CC: Envoyer signalement
+CC -> DB: Sauvegarder signalement
+DB --> CC: Signalement cree
+CC -> DB: Creer notification admin
+CC --> UI: Confirmation
+UI --> Citoyen: "Signalement enregistre"
+
+== Demande de collecte ==
+Citoyen -> UI: Cliquer "Demande collecte"
+UI -> CC: Afficher formulaire
+CC --> UI: Formulaire de demande
+Citoyen -> UI: Remplir demande
+UI -> CC: Envoyer demande
+CC -> DB: Sauvegarder demande
+DB --> CC: Demande creee
+CC --> UI: Confirmation
+UI --> Citoyen: "Demande enregistree"
+
+== Consultation calendrier ==
+Citoyen -> UI: Cliquer "Calendrier"
+UI -> CC: Consulter calendrier
+CC -> DB: Recuperer calendrier
+DB --> CC: Donnees calendrier
+CC --> UI: Afficher calendrier
+UI --> Citoyen: Calendrier des collectes
+
+== Consultation campagnes ==
+Citoyen -> UI: Cliquer "Campagnes"
+UI -> CC: Lister campagnes
+CC -> DB: Recuperer campagnes actives
+DB --> CC: Liste campagnes
+CC --> UI: Afficher campagnes
+UI --> Citoyen: Liste des campagnes
+
+@enduml

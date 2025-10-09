@@ -1,0 +1,98 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Gérer ses Notifications
+
+start
+
+:Citoyen authentifié;
+:Cliquer sur l'icône de notification;
+
+:Récupérer les notifications non lues;
+:Afficher la liste des notifications non lues;
+
+if (Accéder à toutes les notifications ?) then (Oui)
+  :Cliquer sur "Toutes les notifications";
+  :Récupérer toutes les notifications;
+  :Afficher par ordre chronologique;
+else (Non)
+  :Continuer avec les notifications non lues;
+endif
+
+repeat
+  :Consulter les notifications;
+  
+  if (Action sur notification ?) then (Lire notification)
+    :Cliquer sur une notification;
+    :Afficher le contenu complet;
+    :Marquer automatiquement comme lue;
+    :Permettre d'accéder à l'action liée;
+  elseif (Marquer comme lue/non lue) then (Marquer)
+    :Sélectionner une notification;
+    :Marquer comme lue ou non lue;
+    :Mettre à jour le statut;
+  elseif (Supprimer notification) then (Supprimer)
+    :Sélectionner une notification;
+    :Supprimer la notification;
+    :Confirmer la suppression;
+  elseif (Suppression en lot) then (Suppression lot)
+    :Sélectionner plusieurs notifications;
+    :Cliquer sur "Supprimer sélectionnées";
+    :Demander confirmation;
+    :Supprimer les notifications sélectionnées;
+  endif
+  
+  if (Notifications groupées ?) then (Oui)
+    :Développer un groupe pour voir les détails;
+    :Afficher les notifications détaillées;
+  endif
+  
+  if (Notification avec action ?) then (Oui)
+    :Cliquer sur un bouton d'action;
+    :Traiter l'action sans quitter la page;
+    :Mettre à jour le statut;
+  endif
+  
+  if (Notification expirée ?) then (Oui)
+    :Afficher "Expirée" et désactiver les actions;
+    :Permettre de supprimer la notification expirée;
+  endif
+
+repeat while (Continuer à gérer ?) is (Oui)
+-> Non;
+
+if (Configurer les préférences ?) then (Oui)
+  :Accéder aux paramètres de notifications;
+  :Afficher les options de configuration;
+  
+  :Configurer les types de notifications souhaités;
+  :Configurer les canaux (email, SMS, push);
+  
+  if (Désactivation temporaire ?) then (Oui)
+    :Désactiver temporairement certains types;
+    :Définir une période (vacances, absence);
+    :Suspendre les notifications;
+    :Programmer la reprise automatique;
+  endif
+  
+  :Sauvegarder les préférences;
+endif
+
+if (Archive automatique ?) then (Oui)
+  :Détecter notifications anciennes (> 30 jours);
+  :Archiver automatiquement les anciennes notifications;
+  :Permettre d'accéder aux archives;
+  :Permettre de supprimer définitivement les archives;
+endif
+
+if (Notifications urgentes ?) then (Oui)
+  :Identifier les notifications urgentes;
+  :Afficher toujours en priorité;
+  :Permettre seulement de réduire la fréquence;
+endif
+
+stop
+
+@enduml
+
+
+

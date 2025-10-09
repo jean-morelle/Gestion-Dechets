@@ -1,0 +1,37 @@
+@startuml
+title Diagramme de Sequence - Citoyen
+
+actor Citoyen
+participant "Interface" as UI
+participant "Controller" as CTRL
+participant "Base de Donnees" as DB
+
+== Signalement d'un probleme ==
+Citoyen -> UI: 1. Clique "Signaler"
+UI -> CTRL: 2. GET /citoyen/signalements/create
+CTRL -> UI: 3. Affiche formulaire
+UI -> Citoyen: 4. Formulaire signalement
+Citoyen -> UI: 5. Remplit + soumet
+UI -> CTRL: 6. POST /citoyen/signalements
+CTRL -> DB: 7. INSERT signalement
+DB -> CTRL: 8. Confirmation
+CTRL -> UI: 9. Redirection + message
+UI -> Citoyen: 10. "Signalement enregistre"
+
+== Consultation calendrier ==
+Citoyen -> UI: 11. Clique "Calendrier"
+UI -> CTRL: 12. GET /citoyen/calendrier
+CTRL -> DB: 13. SELECT calendrier
+DB -> CTRL: 14. Donnees calendrier
+CTRL -> UI: 15. Vue calendrier
+UI -> Citoyen: 16. Calendrier affiche
+
+== Consultation campagnes ==
+Citoyen -> UI: 17. Clique "Campagnes"
+UI -> CTRL: 18. GET /citoyen/campagnes
+CTRL -> DB: 19. SELECT campagnes
+DB -> CTRL: 20. Liste campagnes
+CTRL -> UI: 21. Vue campagnes
+UI -> Citoyen: 22. Campagnes affichees
+
+@enduml

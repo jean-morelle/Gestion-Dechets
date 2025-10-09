@@ -1,0 +1,60 @@
+@startuml
+title Diagramme de Sequence - Administrateur
+
+actor Administrateur
+participant "Systeme" as SYS
+
+== Connexion ==
+Administrateur -> SYS: 1. Se connecter
+SYS --> Administrateur: 2. Page dashboard
+
+== Gestion utilisateurs ==
+Administrateur -> SYS: 3. Cliquer "Utilisateurs"
+SYS --> Administrateur: 4. Liste utilisateurs
+Administrateur -> SYS: 5. Cliquer "Nouvel utilisateur"
+SYS --> Administrateur: 6. Formulaire creation
+Administrateur -> SYS: 7. Remplir + envoyer
+SYS --> Administrateur: 8. "Utilisateur cree"
+
+== Traitement signalements ==
+Administrateur -> SYS: 9. Cliquer "Signalements"
+SYS --> Administrateur: 10. Liste signalements
+Administrateur -> SYS: 11. Cliquer "Traiter signalement"
+SYS --> Administrateur: 12. Formulaire traitement
+Administrateur -> SYS: 13. Remplir traitement
+SYS --> Administrateur: 14. "Signalement traite"
+
+== Creation itineraire ==
+Administrateur -> SYS: 15. Cliquer "Itineraires"
+SYS --> Administrateur: 16. Liste itineraires
+Administrateur -> SYS: 17. Cliquer "Nouvel itineraire"
+SYS --> Administrateur: 18. Formulaire itineraire
+Administrateur -> SYS: 19. Remplir + envoyer
+SYS --> Administrateur: 20. "Itineraire cree"
+
+== Creation campagne ==
+Administrateur -> SYS: 21. Cliquer "Campagnes"
+SYS --> Administrateur: 22. Liste campagnes
+Administrateur -> SYS: 23. Cliquer "Nouvelle campagne"
+SYS --> Administrateur: 24. Formulaire campagne
+Administrateur -> SYS: 25. Remplir + upload fichier
+SYS --> Administrateur: 26. "Campagne creee"
+
+== Supervision ==
+Administrateur -> SYS: 27. Cliquer "Supervision"
+SYS --> Administrateur: 28. Vue supervision
+
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+

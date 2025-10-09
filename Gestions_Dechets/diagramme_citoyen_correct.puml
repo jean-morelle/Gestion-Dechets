@@ -1,0 +1,56 @@
+@startuml
+title Diagramme de Cas d'Utilisation - Citoyen
+
+actor Citoyen
+
+usecase ConsulterDashboard
+usecase ConsulterSignalements
+usecase CreerSignalement
+usecase AfficherSignalement
+usecase EnregistrerSignalement
+usecase ConsulterPlaintes
+usecase CreerPlainte
+usecase AfficherPlainte
+usecase EnregistrerPlainte
+usecase ConsulterDemandesCollecte
+usecase CreerDemandeCollecte
+usecase AfficherDemandeCollecte
+usecase EnregistrerDemandeCollecte
+usecase ConsulterCalendrier
+usecase VoirCampagnes
+usecase AfficherCampagne
+usecase ConsulterNotifications
+usecase EnvoyerMessages
+usecase ConsulterProfil
+usecase ModifierParametres
+
+Citoyen --> ConsulterDashboard
+Citoyen --> ConsulterSignalements
+Citoyen --> CreerSignalement
+Citoyen --> AfficherSignalement
+Citoyen --> EnregistrerSignalement
+Citoyen --> ConsulterPlaintes
+Citoyen --> CreerPlainte
+Citoyen --> AfficherPlainte
+Citoyen --> EnregistrerPlainte
+Citoyen --> ConsulterDemandesCollecte
+Citoyen --> CreerDemandeCollecte
+Citoyen --> AfficherDemandeCollecte
+Citoyen --> EnregistrerDemandeCollecte
+Citoyen --> ConsulterCalendrier
+Citoyen --> VoirCampagnes
+Citoyen --> AfficherCampagne
+Citoyen --> ConsulterNotifications
+Citoyen --> EnvoyerMessages
+Citoyen --> ConsulterProfil
+Citoyen --> ModifierParametres
+
+AfficherSignalement --> ConsulterSignalements
+EnregistrerSignalement --> CreerSignalement
+AfficherPlainte --> ConsulterPlaintes
+EnregistrerPlainte --> CreerPlainte
+AfficherDemandeCollecte --> ConsulterDemandesCollecte
+EnregistrerDemandeCollecte --> CreerDemandeCollecte
+AfficherCampagne --> VoirCampagnes
+
+@enduml

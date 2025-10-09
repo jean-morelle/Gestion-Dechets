@@ -1,0 +1,149 @@
+@startuml
+!theme plain
+title Diagramme de Séquence - Administrateur Gère les Messages
+
+actor "Administrateur" as Admin
+participant "Système" as System
+
+== Accès à la Gestion des Messages ==
+
+Admin -> System: Accède au tableau de bord
+System -> Admin: Affiche le dashboard
+
+Admin -> System: Clique sur "Notifications" ou "Messages"
+System -> System: Récupère les notifications envoyées par l'admin
+note right: Filtrage par expediteur_id = Auth::id()\nTri par date de création
+
+System -> Admin: Affiche la liste des notifications envoyées
+note right: Statistiques (total, non lues, lues)\nListe paginée avec détails
+
+== Consultation des Messages ==
+
+Admin -> System: Consulte la liste des notifications
+System -> Admin: Affiche les notifications avec statuts
+note right: Titre, destinataire, type, priorité\nDate d'envoi, statut de lecture
+
+Admin -> System: Clique sur une notification pour voir les détails
+System -> System: Vérifie les permissions
+note right: expediteur_id === Auth::id()
+
+alt Permissions OK
+    System -> Admin: Affiche les détails de la notification
+    note right: Contenu complet, destinataire\nDate d'envoi, statut de lecture
+else Permissions refusées
+    System -> Admin: "Accès refusé"
+end
+
+== Création d'une Nouvelle Notification ==
+
+Admin -> System: Clique sur "Nouvelle notification"
+System -> System: Récupère tous les utilisateurs disponibles
+note right: Exclut l'admin connecté\nGroupe par rôle (admin, citoyen, collecteur)
+
+System -> Admin: Affiche le formulaire de création
+note right: Sélection multiple des destinataires\nChamps: type, priorité, titre, message
+
+== Saisie de la Notification ==
+
+Admin -> System: Sélectionne les destinataires
+note right: Un ou plusieurs utilisateurs\nGroupés par rôle
+
+Admin -> System: Sélectionne le type de notification
+note right: signalement, plainte, collecte, itineraire\ncalendrier, systeme
+
+Admin -> System: Définit la priorité
+note right: faible, moyenne, elevee, urgente
+
+Admin -> System: Saisit le titre de la notification
+note right: Obligatoire, max 255 caractères
+
+Admin -> System: Rédige le contenu du message
+note right: Obligatoire, min 10 caractères
+
+Admin -> System: Optionnel: ajoute un lien d'action
+note right: URL vers une page spécifique
+
+Admin -> System: Optionnel: définit une icône
+note right: Classe CSS pour l'icône
+
+== Envoi de la Notification ==
+
+Admin -> System: Clique sur "Envoyer la notification"
+
+System -> System: Valide les données saisies
+note right: destinataires: required|array|min:1\ntype: required|in:signalement,plainte,collecte...\ntitre: required|string|max:255\nmessage: required|string|min:10\npriorite: required|in:faible,moyenne,elevee,urgente
+
+alt Validation réussie
+    System -> System: Crée une notification pour chaque destinataire
+    note right: INSERT INTO notifications\npour chaque destinataire sélectionné
+    
+    System -> System: Enregistre les notifications en base
+    note right: expediteur_id = Auth::id()\nstatut = 'non_lu' par défaut\ndate_envoi = now()
+    
+    System -> Admin: Confirme l'envoi
+    note right: "Notification envoyée à X destinataire(s) !"
+    System -> Admin: Redirige vers la liste des notifications
+    
+else Validation échoue
+    System -> Admin: Affiche les erreurs de validation
+    note right: "Destinataires requis"\n"Message trop court"\n"Type invalide"
+    Admin -> System: Corrige les erreurs et renvoie
+end
+
+== Gestion des Notifications ==
+
+alt Suppression d'une notification
+    Admin -> System: Clique sur "Supprimer"
+    System -> System: Vérifie les permissions
+    note right: expediteur_id === Auth::id()
+    System -> System: Supprime la notification
+    System -> Admin: "Notification supprimée avec succès !"
+end
+
+== Scénarios Alternatifs ==
+
+note over Admin, System: Notification d'urgence
+alt Notification d'urgence à tous les utilisateurs
+    Admin -> System: Clique sur "Notification d'urgence"
+    System -> Admin: Affiche le formulaire d'urgence
+    note right: Formulaire simplifié\nEnvoi automatique à tous les utilisateurs
+    Admin -> System: Saisit le titre et message d'urgence
+    System -> System: Envoie à tous les utilisateurs
+    System -> Admin: "Notification d'urgence envoyée à X utilisateur(s) !"
+end
+
+note over Admin, System: Notifications automatiques
+alt Notifications automatiques lors du traitement
+    Admin -> System: Traite un signalement ou une plainte
+    System -> System: Crée automatiquement une notification
+    note right: Notification au citoyen concerné\nInformer du statut de traitement
+    System -> System: Enregistre la notification
+    System -> Admin: "Notification envoyée au citoyen"
+end
+
+note over Admin, System: Filtrage et recherche
+alt Filtrage des notifications
+    Admin -> System: Applique des filtres
+    note right: Par type, priorité, destinataire\nPar date d'envoi, statut
+    System -> System: Filtre les résultats
+    System -> Admin: Affiche les notifications filtrées
+end
+
+note over Admin, System: Notifications groupées
+alt Envoi groupé par rôle
+    Admin -> System: Sélectionne un groupe d'utilisateurs
+    note right: Tous les citoyens d'un quartier\nTous les collecteurs\nTous les admins
+    System -> System: Crée les notifications pour le groupe
+    System -> Admin: "Notifications envoyées au groupe"
+end
+
+note over Admin, System: Suivi des notifications
+alt Suivi du statut de lecture
+    Admin -> System: Consulte le statut des notifications
+    System -> Admin: Affiche les statistiques de lecture
+    note right: Nombre de notifications lues/non lues\nTaux de lecture par destinataire
+end
+
+@enduml
+
+

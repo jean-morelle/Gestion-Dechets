@@ -1,0 +1,37 @@
+@startuml
+title Diagramme de Sequence - Collecteur
+
+actor Collecteur
+participant "Systeme" as SYS
+
+Collecteur -> SYS: Se connecter
+SYS --> Collecteur: Acces autorise
+
+Collecteur -> SYS: Consulter ses itineraires
+SYS --> Collecteur: Itineraires affiches
+
+Collecteur -> SYS: Demarrer un itineraire
+SYS --> Collecteur: Itineraire demarre
+
+Collecteur -> SYS: Consulter ses collectes
+SYS --> Collecteur: Collectes affichees
+
+Collecteur -> SYS: Demarrer une collecte
+SYS --> Collecteur: Collecte demarree
+
+Collecteur -> SYS: Valider une collecte
+SYS --> Collecteur: Collecte validee
+
+Collecteur -> SYS: Signaler un incident
+SYS --> Collecteur: Incident signale
+
+Collecteur -> SYS: Voir les campagnes
+SYS --> Collecteur: Campagnes affichees
+
+Collecteur -> SYS: Consulter ses notifications
+SYS --> Collecteur: Notifications affichees
+
+Collecteur -> SYS: Envoyer des messages
+SYS --> Collecteur: Message envoye
+
+@enduml

@@ -1,0 +1,116 @@
+@startuml
+!theme plain
+title Diagramme de Séquence - Collecteur Envoie un Message
+
+actor "Collecteur" as Collecteur
+participant "Système" as System
+
+== Accès aux Messages ==
+
+Collecteur -> System: Accède au tableau de bord
+System -> Collecteur: Affiche le dashboard
+
+Collecteur -> System: Clique sur "Messages"
+System -> Collecteur: Affiche la liste des messages
+note right: Messages reçus et envoyés\nCompteur de messages non lus
+
+== Création d'un Nouveau Message ==
+
+Collecteur -> System: Clique sur "Nouveau message"
+System -> System: Récupère tous les utilisateurs disponibles
+note right: Exclut le collecteur connecté\nGroupe par rôle (admin, citoyen, collecteur)
+
+System -> Collecteur: Affiche le formulaire de création
+note right: Liste déroulante des destinataires\nChamps: sujet, message
+
+== Saisie du Message ==
+
+Collecteur -> System: Sélectionne le destinataire
+note right: Administrateur, citoyen ou autre collecteur
+
+Collecteur -> System: Saisit le sujet du message
+note right: Optionnel, max 255 caractères
+
+Collecteur -> System: Rédige le contenu du message
+note right: Obligatoire, min 10 caractères
+
+== Envoi du Message ==
+
+Collecteur -> System: Clique sur "Envoyer le message"
+
+System -> System: Valide les données saisies
+note right: receiver_id: required|exists:users,id\nsubject: nullable|string|max:255\nmessage: required|string|min:10
+
+alt Validation réussie
+    System -> System: Enregistre le message en base
+    note right: sender_id = Auth::id()\nreceiver_id = sélectionné\nis_read = false
+    
+    System -> Collecteur: Confirme l'envoi
+    note right: "Message envoyé avec succès !"
+    System -> Collecteur: Redirige vers la liste des messages
+    
+else Validation échoue
+    System -> Collecteur: Affiche les erreurs de validation
+    note right: "Destinataire requis"\n"Message trop court"\n"Destinataire invalide"
+    Collecteur -> System: Corrige les erreurs et renvoie
+end
+
+== Réception et Lecture ==
+
+note over Collecteur, System: Du côté du destinataire
+System -> System: Destinataire reçoit le message
+System -> System: Marque le message comme non lu
+System -> System: Incrémente le compteur de messages non lus
+
+== Scénarios Alternatifs ==
+
+note over Collecteur, System: Réponse à un message
+alt Réponse à un message reçu
+    Collecteur -> System: Clique sur "Répondre"
+    System -> Collecteur: Affiche le formulaire de réponse
+    note right: Destinataire pré-rempli\nSujet avec "Re: "
+    Collecteur -> System: Rédige la réponse
+    System -> System: Enregistre la réponse
+    System -> Collecteur: "Réponse envoyée avec succès !"
+end
+
+note over Collecteur, System: Consultation des messages
+alt Consultation des messages
+    Collecteur -> System: Consulte la liste des messages
+    System -> Collecteur: Affiche messages reçus et envoyés
+    Collecteur -> System: Ouvre un message spécifique
+    System -> System: Marque le message comme lu
+    System -> Collecteur: Affiche le contenu complet
+end
+
+note over Collecteur, System: Suppression de message
+alt Suppression de message
+    Collecteur -> System: Clique sur "Supprimer"
+    System -> System: Vérifie les permissions
+    note right: sender_id ou receiver_id === Auth::id()
+    System -> System: Supprime le message
+    System -> Collecteur: "Message supprimé avec succès !"
+end
+
+note over Collecteur, System: Message à un citoyen spécifique
+alt Message à un citoyen
+    Collecteur -> System: Sélectionne un citoyen
+    note right: Peut être lié à une collecte\nou un signalement
+    Collecteur -> System: Rédige un message informatif
+    System -> System: Enregistre le message
+    System -> Collecteur: "Message envoyé au citoyen"
+end
+
+note over Collecteur, System: Message à l'administrateur
+alt Message à l'administrateur
+    Collecteur -> System: Sélectionne un administrateur
+    note right: Pour signaler un problème\nou demander de l'aide
+    Collecteur -> System: Rédige un message d'urgence
+    System -> System: Enregistre le message
+    System -> System: Notifie l'administrateur
+    System -> Collecteur: "Message envoyé à l'administrateur"
+end
+
+@enduml
+
+

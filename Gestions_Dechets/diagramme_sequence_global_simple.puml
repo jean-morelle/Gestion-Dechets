@@ -1,0 +1,50 @@
+@startuml
+title Diagramme de Sequence Global
+
+actor Citoyen
+actor Collecteur
+actor Administrateur
+participant "Systeme" as SYS
+
+== Signalement et Traitement ==
+Citoyen -> SYS: Signaler un probleme
+SYS --> Citoyen: Signalement enregistre
+SYS -> Administrateur: Notification signalement
+Administrateur -> SYS: Traiter le signalement
+SYS --> Administrateur: Signalement traite
+SYS -> Citoyen: Notification traitement
+
+== Creation Itineraire et Collecte ==
+Administrateur -> SYS: Creer un itineraire
+SYS --> Administrateur: Itineraire cree
+SYS -> Collecteur: Notification nouvel itineraire
+Collecteur -> SYS: Consulter ses itineraires
+SYS --> Collecteur: Itineraires affiches
+Collecteur -> SYS: Demarrer une collecte
+SYS --> Collecteur: Collecte demarree
+SYS -> Administrateur: Notification collecte
+
+== Campagne de Sensibilisation ==
+Administrateur -> SYS: Creer une campagne
+SYS --> Administrateur: Campagne creee
+SYS -> Citoyen: Notification nouvelle campagne
+SYS -> Collecteur: Notification nouvelle campagne
+Citoyen -> SYS: Voir les campagnes
+SYS --> Citoyen: Campagnes affichees
+Collecteur -> SYS: Voir les campagnes
+SYS --> Collecteur: Campagnes affichees
+
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+

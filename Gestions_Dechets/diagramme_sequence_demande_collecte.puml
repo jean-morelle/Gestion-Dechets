@@ -1,0 +1,100 @@
+@startuml
+!theme plain
+title Diagramme de Séquence - Citoyen Fait une Demande de Collecte
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+
+== Scénario Nominal ==
+
+Citoyen -> System: Accède au tableau de bord
+System -> Citoyen: Affiche le dashboard
+
+Citoyen -> System: Clique sur "Demande de collecte"
+System -> Citoyen: Affiche formulaire de demande de collecte
+
+== Saisie des Informations ==
+
+Citoyen -> System: Sélectionne type de collecte
+note right: menagere, encombrant, vert,\nrecyclable, dangereux, demenagement
+
+Citoyen -> System: Saisit objet de la demande
+Citoyen -> System: Décrit les déchets à collecter
+Citoyen -> System: Indique adresse de collecte
+Citoyen -> System: Spécifie le quartier
+Citoyen -> System: Sélectionne niveau d'urgence
+note right: faible, moyenne, elevee, urgente
+
+Citoyen -> System: Optionnel: saisit coordonnées GPS
+Citoyen -> System: Optionnel: renseigne téléphone de contact
+Citoyen -> System: Optionnel: télécharge photo des déchets
+Citoyen -> System: Optionnel: ajoute instructions spéciales
+
+== Planification de la Collecte ==
+
+Citoyen -> System: Saisit date souhaitée de collecte
+Citoyen -> System: Saisit heure souhaitée de collecte
+Citoyen -> System: Optionnel: estime le montant
+
+== Soumission de la Demande ==
+
+Citoyen -> System: Clique sur "Enregistrer la demande"
+
+System -> System: Valide les données saisies
+note right: Vérification des champs obligatoires\net formats valides
+
+alt Validation réussie
+    System -> System: Enregistre la demande de collecte
+    System -> System: Génère un numéro de référence unique
+    System -> System: Envoie notifications aux administrateurs
+    
+    System -> Citoyen: Confirme l'enregistrement
+    note right: "Demande de collecte soumise avec succès !\nNuméro de référence: #DC-12345"
+    
+else Validation échoue
+    System -> Citoyen: Affiche les erreurs de validation
+    note right: "Champs obligatoires manquants\nou format invalide"
+    Citoyen -> System: Corrige les erreurs et renvoie
+end
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: Géolocalisation automatique
+alt Géolocalisation disponible
+    System -> Citoyen: "Autoriser l'accès à votre position ?"
+    Citoyen -> System: Autorise l'accès GPS
+    System -> System: Récupère position automatiquement
+    System -> Citoyen: Adresse pré-remplie automatiquement
+end
+
+note over Citoyen, System: Erreur de téléchargement photo
+alt Erreur upload photo
+    System -> Citoyen: "Erreur lors du téléchargement de la photo"
+    System -> Citoyen: "Continuer sans photo ?"
+    Citoyen -> System: Confirme continuation
+    System -> Citoyen: "Demande enregistrée sans photo"
+end
+
+note over Citoyen, System: Date dans le passé
+alt Date de collecte invalide
+    System -> Citoyen: "La date de collecte doit être dans le futur"
+    Citoyen -> System: Corrige la date
+    System -> Citoyen: "Date validée"
+end
+
+note over Citoyen, System: Demande urgente
+alt Demande urgente (elevee/urgente)
+    System -> System: Traite en priorité absolue
+    System -> System: Envoie notifications immédiates aux admins
+    System -> Citoyen: "Demande urgente traitée en priorité"
+    note right: SMS ou notification push\nselon configuration
+end
+
+note over Citoyen, System: Estimation du coût
+alt Estimation automatique
+    System -> System: Calcule estimation basée sur le type
+    System -> Citoyen: "Estimation suggérée: XXX FCFA"
+    Citoyen -> System: Accepte ou modifie l'estimation
+end
+
+@enduml

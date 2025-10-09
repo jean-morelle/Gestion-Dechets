@@ -1,0 +1,317 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Administrateur Gère les Messages
+
+start
+
+:Administrateur authentifié;
+:Accéder au tableau de bord;
+:Afficher les statistiques;
+
+:Cliquer sur "Notifications" ou "Messages";
+:Récupérer les notifications envoyées;
+:Afficher la liste des notifications;
+note right
+  Statistiques affichées:
+  - Total des notifications
+  - Notifications non lues
+  - Notifications lues
+  - Liste paginée
+end note
+
+if (Consulter notifications existantes ?) then (Oui)
+  :Consulter la liste des notifications;
+  
+  if (Voir détails d'une notification ?) then (Oui)
+    :Cliquer sur une notification;
+    :Vérifier les permissions;
+    
+    if (Permissions OK ?) then (Oui)
+      :Afficher les détails de la notification;
+      note right
+        Détails affichés:
+        - Contenu complet
+        - Destinataire
+        - Date d'envoi
+        - Statut de lecture
+        - Actions disponibles
+      end note
+    else (Non)
+      :Afficher "Accès refusé";
+    endif
+  endif
+  
+  if (Supprimer une notification ?) then (Oui)
+    :Cliquer sur "Supprimer";
+    :Vérifier les permissions;
+    :Supprimer la notification;
+    :Afficher "Notification supprimée";
+  endif
+else (Non)
+  :Passer à la création d'une nouvelle notification;
+endif
+
+:Cliquer sur "Nouvelle notification";
+:Récupérer tous les utilisateurs disponibles;
+note right
+  Utilisateurs disponibles:
+  - Administrateurs
+  - Citoyens
+  - Collecteurs
+  - Groupés par rôle
+end note
+
+:Afficher le formulaire de création;
+
+:Sélectionner les destinataires;
+if (Type de sélection ?) then (Sélection multiple)
+  :Choisir plusieurs destinataires;
+  note right
+    Sélection possible:
+    - Plusieurs administrateurs
+    - Groupe de citoyens
+    - Équipe de collecteurs
+  end note
+elseif (Groupe par rôle) then (Groupe par rôle)
+  :Sélectionner un groupe entier;
+  note right
+    Groupes disponibles:
+    - Tous les citoyens
+    - Tous les collecteurs
+    - Tous les administrateurs
+  end note
+else (Destinataire unique)
+  :Choisir un destinataire unique;
+endif
+
+:Sélectionner le type de notification;
+note right
+  Types disponibles:
+  - Signalement
+  - Plainte
+  - Collecte
+  - Itinéraire
+  - Calendrier
+  - Système
+end note
+
+:Définir la priorité;
+note right
+  Niveaux de priorité:
+  - Faible
+  - Moyenne
+  - Élevée
+  - Urgente
+end note
+
+:Saisir le titre de la notification;
+if (Titre fourni ?) then (Oui)
+  :Utiliser le titre saisi;
+else (Non)
+  :Générer un titre automatique;
+endif
+
+:Rédiger le contenu du message;
+if (Message suffisamment détaillé ?) then (Oui)
+  :Message prêt à envoyer;
+else (Non)
+  :Ajouter plus de détails;
+  :Vérifier la clarté;
+endif
+
+if (Lien d'action nécessaire ?) then (Oui)
+  :Ajouter un lien d'action;
+  note right
+    Liens possibles:
+    - Page de signalement
+    - Détails d'itinéraire
+    - Formulaire de collecte
+    - Page système
+  end note
+endif
+
+if (Icône personnalisée ?) then (Oui)
+  :Définir une icône;
+  note right
+    Icônes disponibles:
+    - fas fa-bell (notification)
+    - fas fa-exclamation-triangle (urgence)
+    - fas fa-info-circle (information)
+    - fas fa-check-circle (confirmation)
+  end note
+endif
+
+:Cliquer sur "Envoyer la notification";
+
+:Système valide les données;
+if (Validation réussie ?) then (Oui)
+  :Créer une notification pour chaque destinataire;
+  note right
+    Données enregistrées:
+    - user_id = destinataire
+    - expediteur_id = Auth::id()
+    - type = type sélectionné
+    - titre = titre saisi
+    - message = contenu
+    - priorite = priorité choisie
+    - lien_action = lien (optionnel)
+    - icone = icône (optionnel)
+    - statut = 'non_lu'
+    - date_envoi = now()
+  end note
+  
+  :Enregistrer les notifications en base;
+  :Compter les notifications créées;
+  :Générer confirmation d'envoi;
+  :Afficher "Notification envoyée à X destinataire(s) !";
+  :Rediriger vers la liste des notifications;
+  
+  stop
+  
+else (Non)
+  :Afficher les erreurs de validation;
+  
+  if (Destinataires manquants ?) then (Oui)
+    :Afficher "Au moins un destinataire requis";
+  endif
+  
+  if (Type invalide ?) then (Oui)
+    :Afficher "Type de notification invalide";
+  endif
+  
+  if (Titre manquant ?) then (Oui)
+    :Afficher "Titre requis";
+  endif
+  
+  if (Message trop court ?) then (Oui)
+    :Afficher "Message trop court (min 10 caractères)";
+  endif
+  
+  if (Priorité invalide ?) then (Oui)
+    :Afficher "Priorité invalide";
+  endif
+  
+  :Corriger les erreurs;
+  :Renvoyer le formulaire;
+endif
+
+if (Notification d'urgence ?) then (Oui)
+  :Cliquer sur "Notification d'urgence";
+  :Afficher le formulaire d'urgence;
+  note right
+    Formulaire simplifié:
+    - Titre obligatoire
+    - Message obligatoire
+    - Lien d'action optionnel
+    - Envoi automatique à tous les utilisateurs
+  end note
+  
+  :Saisir le titre d'urgence;
+  :Rédiger le message d'urgence;
+  
+  if (Lien d'action urgent ?) then (Oui)
+    :Ajouter un lien d'action;
+  endif
+  
+  :Cliquer sur "Envoyer l'urgence";
+  :Valider les données d'urgence;
+  
+  if (Validation urgence OK ?) then (Oui)
+    :Envoyer à tous les utilisateurs;
+    :Créer notifications avec priorité urgente;
+    :Marquer avec icône d'alerte;
+    :Afficher "Notification d'urgence envoyée à X utilisateur(s) !";
+  else (Non)
+    :Afficher erreurs de validation;
+    :Corriger et renvoyer;
+  endif
+endif
+
+if (Notifications automatiques ?) then (Oui)
+  :Traiter un signalement ou une plainte;
+  :Créer automatiquement une notification;
+  note right
+    Notifications automatiques:
+    - Traitement de signalement
+    - Réponse à une plainte
+    - Attribution d'itinéraire
+    - Modification de calendrier
+  end note
+  :Envoyer au citoyen concerné;
+  :Informer du statut de traitement;
+endif
+
+if (Filtrage et recherche ?) then (Oui)
+  :Appliquer des filtres;
+  
+  if (Filtre par type ?) then (Oui)
+    :Sélectionner un type;
+    :Filtrer les notifications;
+  endif
+  
+  if (Filtre par priorité ?) then (Oui)
+    :Sélectionner une priorité;
+    :Filtrer les notifications;
+  endif
+  
+  if (Filtre par destinataire ?) then (Oui)
+    :Sélectionner un destinataire;
+    :Filtrer les notifications;
+  endif
+  
+  if (Filtre par date ?) then (Oui)
+    :Sélectionner une période;
+    :Filtrer les notifications;
+  endif
+  
+  :Afficher les résultats filtrés;
+endif
+
+if (Recherche dans les notifications ?) then (Oui)
+  :Saisir un terme de recherche;
+  :Filtrer par titre ou contenu;
+  :Afficher les résultats;
+endif
+
+if (Gestion des groupes ?) then (Oui)
+  :Créer un groupe de destinataires;
+  :Sélectionner les utilisateurs du groupe;
+  :Enregistrer le groupe;
+  :Utiliser le groupe pour les envois;
+endif
+
+if (Templates de messages ?) then (Oui)
+  :Créer un template de message;
+  :Définir le contenu standard;
+  :Sauvegarder le template;
+  :Utiliser le template pour les envois;
+endif
+
+if (Statistiques de lecture ?) then (Oui)
+  :Consulter les statistiques;
+  :Voir le taux de lecture par destinataire;
+  :Analyser l'efficacité des notifications;
+  :Générer un rapport;
+endif
+
+if (Erreur système ?) then (Oui)
+  :Afficher message d'erreur système;
+  :Proposer de réessayer;
+  :Sauvegarder les données saisies;
+  :Permettre la reprise ultérieure;
+  stop
+endif
+
+if (Problème de performance ?) then (Oui)
+  :Détecter un grand nombre de destinataires;
+  :Proposer l'envoi en lot;
+  :Traiter par petits groupes;
+  :Afficher la progression;
+endif
+
+:Retourner à la liste des notifications;
+stop
+
+@enduml
+
+

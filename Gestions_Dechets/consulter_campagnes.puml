@@ -1,0 +1,106 @@
+@startuml
+title Diagramme de Description Textuelle - Consulter les Campagnes de Sensibilisation
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+database "Base de données" as DB
+actor "Administrateur" as Admin
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur "Campagnes"
+System -> DB: Récupère les campagnes actives
+DB -> System: Retourne la liste des campagnes
+System -> Citoyen: Affiche la liste des campagnes organisées par catégorie et date
+
+note over Citoyen, System: **Navigation dans les campagnes**
+System -> Citoyen: Montre titre, description, date
+System -> Citoyen: Affiche le statut (active, terminée, à venir)
+Citoyen -> System: Filtre par catégorie (tri, recyclage, réduction déchets)
+
+Citoyen -> System: Clique sur une campagne intéressante
+System -> DB: Récupère les détails de la campagne
+System -> Citoyen: Affiche les détails complets (objectifs, conseils, informations, médias)
+
+Citoyen -> System: Télécharge des documents (guides, brochures)
+System -> System: Vérifie l'espace de stockage
+System -> Citoyen: Génère et télécharge les fichiers
+
+Citoyen -> System: Partage la campagne sur les réseaux sociaux
+System -> System: Ouvre les options de partage
+System -> Citoyen: Génère un lien personnalisé
+
+Citoyen -> System: Participe à des quiz ou sondages
+System -> System: Affiche le quiz/sondage
+Citoyen -> System: Répond aux questions
+System -> DB: Enregistre les réponses
+System -> Citoyen: Fournit un score et des commentaires
+
+Citoyen -> System: Marque son intérêt ou sa participation
+System -> DB: Enregistre l'engagement du citoyen
+System -> Citoyen: Confirme l'enregistrement
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **1a. Aucune campagne active**
+System -> DB: Vérifie les campagnes actives
+DB -> System: Aucune campagne active trouvée
+System -> Citoyen: Affiche "Aucune campagne en cours"
+System -> Citoyen: Affiche message encourageant
+System -> Citoyen: Permet de consulter les campagnes passées
+
+note over Citoyen, System: **2a. Filtrage par type**
+Citoyen -> System: Filtre par type de campagne
+System -> System: Applique le filtre
+System -> Citoyen: Met à jour l'affichage selon le filtre
+Citoyen -> System: Peut combiner plusieurs filtres
+
+note over Citoyen, System: **2b. Recherche dans les campagnes**
+Citoyen -> System: Utilise la fonction de recherche
+Citoyen -> System: Saisit des mots-clés
+System -> DB: Recherche dans les titres et descriptions
+System -> Citoyen: Affiche les campagnes correspondantes
+
+note over Citoyen, System: **3a. Campagne avec contenu multimédia**
+System -> System: Détecte contenu multimédia (vidéos, images, infographies)
+System -> Citoyen: Affiche les options de visionnement/téléchargement
+Citoyen -> System: Visionne ou télécharge le contenu
+System -> System: Adapte l'affichage selon le type de média
+
+note over Citoyen, System: **3b. Campagne interactive**
+System -> System: Détecte quiz, sondages, défis
+System -> Citoyen: Propose la participation
+Citoyen -> System: Participe directement
+System -> DB: Enregistre les réponses
+System -> Citoyen: Fournit score et commentaires
+
+note over Citoyen, System: **4a. Téléchargement de ressources**
+Citoyen -> System: Télécharge guides PDF, brochures
+System -> System: Vérifie l'espace de stockage
+System -> DB: Comptabilise les téléchargements
+
+note over Citoyen, System: **5a. Campagne avec récompenses**
+System -> System: Détecte campagne avec récompenses
+System -> Citoyen: Affiche les points, badges, ou prix disponibles
+Citoyen -> System: Participe et gagne des récompenses
+System -> DB: Enregistre les récompenses
+System -> Citoyen: Affiche le classement et les récompenses
+
+note over Citoyen, System: **5b. Campagne avec événements**
+System -> System: Détecte événements (ateliers, conférences)
+System -> Citoyen: Affiche les événements disponibles
+Citoyen -> System: S'inscrit aux événements
+System -> DB: Gère les inscriptions
+System -> Citoyen: Envoie des rappels pour les événements
+
+note over Citoyen, System: **Fonctionnalités additionnelles**
+Citoyen -> System: Active le système de points et badges
+System -> DB: Enregistre les points et badges
+Citoyen -> System: Consulte le classement des participants
+System -> Citoyen: Affiche les recommandations personnalisées
+System -> Citoyen: Envoie notifications des nouvelles campagnes
+
+@enduml
+
+
+

@@ -1,0 +1,133 @@
+@startuml Diagramme de Fréquence - Interactions Citoyen
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #E8F4FD
+  BorderColor #1E3A8A
+  FontColor #1E3A8A
+}
+skinparam note {
+  BackgroundColor #FFF3CD
+  BorderColor #FFC107
+  FontColor #856404
+}
+
+title Diagramme de Fréquence des Interactions Citoyen\nApplication de Gestion des Déchets
+
+start
+
+:Connexion Citoyen;
+note right: **Fréquence: Quotidienne**\nAccès principal à l'application
+
+:Accès Dashboard;
+note right: **Fréquence: Quotidienne**\nConsultation des statistiques personnelles
+
+partition "Actions Principales" {
+  
+  :Consultation Calendrier;
+  note right: **Fréquence: 3-4x/semaine**\nVérification des prochaines collectes
+  
+  :Consultation Notifications;
+  note right: **Fréquence: 2-3x/jour**\nSuivi des mises à jour de statut
+  
+  :Consultation Signalements;
+  note right: **Fréquence: 1-2x/semaine**\nVérification du statut des signalements
+  
+  :Consultation Demandes Collecte;
+  note right: **Fréquence: 1-2x/semaine**\nSuivi des demandes soumises
+  
+  :Consultation Plaintes;
+  note right: **Fréquence: Occasionnelle**\nVérification du traitement des plaintes
+}
+
+partition "Actions de Création" {
+  
+  :Créer Signalement;
+  note right: **Fréquence: 1-2x/mois**\nSignalement de déchets non collectés\nou problèmes observés
+  
+  :Créer Demande Collecte;
+  note right: **Fréquence: 1-3x/mois**\nDemande de collecte spéciale\n(encombrants, déchets verts, etc.)
+  
+  :Créer Plainte;
+  note right: **Fréquence: Rare**\nPlainte sur service ou collecte manquée
+}
+
+partition "Types de Déchets Signalés" {
+  :Déchets Ménagers;
+  note right: **Fréquence: Élevée**\nProblèmes de collecte régulière
+  
+  :Encombrants;
+  note right: **Fréquence: Moyenne**\nObjets volumineux non collectés
+  
+  :Déchets Verts;
+  note right: **Fréquence: Saisonnière**\nTonte, branches, feuilles
+  
+  :Déchets Recyclables;
+  note right: **Fréquence: Moyenne**\nProblèmes de tri sélectif
+  
+  :Déchets Dangereux;
+  note right: **Fréquence: Faible**\nProduits chimiques, batteries
+  
+  :Autres;
+  note right: **Fréquence: Variable**\nDéchets non catégorisés
+}
+
+partition "Types de Demandes de Collecte" {
+  :Collecte Ménagère;
+  note right: **Fréquence: Régulière**\nCollecte standard programmée
+  
+  :Collecte Encombrants;
+  note right: **Fréquence: Occasionnelle**\nMobilier, électroménager
+  
+  :Collecte Végétale;
+  note right: **Fréquence: Saisonnière**\nDéchets de jardinage
+  
+  :Collecte Recyclable;
+  note right: **Fréquence: Régulière**\nTri sélectif
+  
+  :Collecte Spéciale;
+  note right: **Fréquence: Rare**\nDéchets nécessitant traitement spécial
+}
+
+partition "Gestion du Profil" {
+  :Modifier Profil;
+  note right: **Fréquence: Rare**\nMise à jour des informations personnelles
+  
+  :Modifier Paramètres;
+  note right: **Fréquence: Occasionnelle**\nPréférences d'affichage et notifications
+}
+
+partition "Niveaux d'Urgence" {
+  :Urgence Faible;
+  note right: **Fréquence: 40%**\nProblèmes non critiques
+  
+  :Urgence Normale;
+  note right: **Fréquence: 35%**\nProblèmes standards
+  
+  :Urgence Élevée;
+  note right: **Fréquence: 20%**\nProblèmes nécessitant attention rapide
+  
+  :Urgence Critique;
+  note right: **Fréquence: 5%**\nSituations d'urgence sanitaire
+}
+
+partition "Suivi et Notifications" {
+  :Notification Nouveau Statut;
+  note right: **Fréquence: Variable**\nMise à jour automatique du statut
+  
+  :Notification Collecte Programmé;
+  note right: **Fréquence: Hebdomadaire**\nRappel de collecte
+  
+  :Notification Traitement Terminé;
+  note right: **Fréquence: Variable**\nConfirmation de traitement
+  
+  :Marquer Notification Lue;
+  note right: **Fréquence: 2-3x/jour**\nGestion des notifications
+}
+
+:Consultation Statistiques;
+note right: **Fréquence: Hebdomadaire**\nBilan des actions personnelles
+
+stop
+
+@enduml

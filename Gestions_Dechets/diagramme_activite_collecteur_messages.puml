@@ -1,0 +1,224 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Collecteur Envoie un Message
+
+start
+
+:Collecteur authentifié;
+:Accéder au tableau de bord;
+:Afficher les statistiques;
+
+:Cliquer sur "Messages";
+:Afficher la liste des messages;
+note right
+  Messages affichés:
+  - Messages reçus
+  - Messages envoyés
+  - Compteur de messages non lus
+  - Statut de lecture
+end note
+
+if (Consulter messages existants ?) then (Oui)
+  :Consulter la liste des messages;
+  
+  if (Message reçu ?) then (Oui)
+    :Ouvrir un message reçu;
+    :Marquer comme lu automatiquement;
+    :Afficher le contenu complet;
+    
+    if (Répondre au message ?) then (Oui)
+      :Cliquer sur "Répondre";
+      :Afficher le formulaire de réponse;
+      :Pré-remplir le destinataire;
+      :Ajouter "Re: " au sujet;
+      :Rédiger la réponse;
+      :Envoyer la réponse;
+    endif
+  endif
+  
+  if (Message envoyé ?) then (Oui)
+    :Consulter un message envoyé;
+    :Afficher le statut de lecture;
+    :Voir si le destinataire a lu;
+  endif
+else (Non)
+  :Passer à la création d'un nouveau message;
+endif
+
+:Cliquer sur "Nouveau message";
+:Récupérer tous les utilisateurs disponibles;
+note right
+  Utilisateurs disponibles:
+  - Administrateurs
+  - Citoyens
+  - Autres collecteurs
+  - Groupés par rôle
+end note
+
+:Afficher le formulaire de création;
+
+:Sélectionner le destinataire;
+if (Type de destinataire ?) then (Administrateur)
+  :Choisir un administrateur;
+  note right
+    Cas d'usage:
+    - Signaler un problème
+    - Demander de l'aide
+    - Rapport d'incident
+  end note
+elseif (Citoyen) then (Citoyen)
+  :Choisir un citoyen;
+  note right
+    Cas d'usage:
+    - Informer sur une collecte
+    - Demander des précisions
+    - Confirmer un rendez-vous
+  end note
+else (Autre collecteur)
+  :Choisir un autre collecteur;
+  note right
+    Cas d'usage:
+    - Collaboration
+    - Partage d'informations
+    - Coordination
+  end note
+endif
+
+:Saisir le sujet du message;
+if (Sujet fourni ?) then (Oui)
+  :Utiliser le sujet saisi;
+else (Non)
+  :Continuer sans sujet;
+endif
+
+:Rédiger le contenu du message;
+if (Message suffisamment détaillé ?) then (Oui)
+  :Message prêt à envoyer;
+else (Non)
+  :Ajouter plus de détails;
+  :Vérifier la clarté;
+endif
+
+:Cliquer sur "Envoyer le message";
+
+:Système valide les données;
+if (Validation réussie ?) then (Oui)
+  :Enregistrer le message en base;
+  note right
+    Données enregistrées:
+    - sender_id = Auth::id()
+    - receiver_id = sélectionné
+    - subject = sujet (optionnel)
+    - message = contenu
+    - is_read = false
+    - created_at = now()
+  end note
+  
+  :Générer confirmation d'envoi;
+  :Afficher "Message envoyé avec succès !";
+  :Rediriger vers la liste des messages;
+  
+  if (Destinataire en ligne ?) then (Oui)
+    :Envoyer notification en temps réel;
+    :Afficher alerte au destinataire;
+  else (Non)
+    :Marquer comme message non lu;
+    :Incrémenter le compteur;
+  endif
+  
+  stop
+  
+else (Non)
+  :Afficher les erreurs de validation;
+  
+  if (Destinataire manquant ?) then (Oui)
+    :Afficher "Destinataire requis";
+  endif
+  
+  if (Message trop court ?) then (Oui)
+    :Afficher "Message trop court (min 10 caractères)";
+  endif
+  
+  if (Destinataire invalide ?) then (Oui)
+    :Afficher "Destinataire invalide";
+  endif
+  
+  :Corriger les erreurs;
+  :Renvoyer le formulaire;
+endif
+
+if (Message urgent ?) then (Oui)
+  :Marquer comme prioritaire;
+  :Envoyer notification immédiate;
+  :Proposer notification SMS;
+endif
+
+if (Message lié à une collecte ?) then (Oui)
+  :Ajouter le lien vers la collecte;
+  :Inclure les détails de la collecte;
+  :Faciliter le suivi;
+endif
+
+if (Message de groupe ?) then (Oui)
+  :Sélectionner plusieurs destinataires;
+  :Envoyer à tous les destinataires;
+  :Créer une copie pour chaque destinataire;
+endif
+
+if (Erreur système ?) then (Oui)
+  :Afficher message d'erreur système;
+  :Proposer de réessayer;
+  :Sauvegarder les données saisies;
+  :Permettre la reprise ultérieure;
+  stop
+endif
+
+if (Problème de connexion ?) then (Oui)
+  :Afficher "Problème de connexion";
+  :Proposer de réessayer;
+  :Sauvegarder en local;
+  :Synchroniser plus tard;
+endif
+
+if (Pièce jointe nécessaire ?) then (Oui)
+  :Ajouter une pièce jointe;
+  :Vérifier le type de fichier;
+  :Vérifier la taille;
+  
+  if (Fichier valide ?) then (Oui)
+    :Joindre le fichier;
+  else (Non)
+    :Afficher erreur de fichier;
+    :Proposer de corriger;
+  endif
+endif
+
+if (Message en brouillon ?) then (Oui)
+  :Sauvegarder comme brouillon;
+  :Permettre la modification ultérieure;
+  :Afficher "Brouillon sauvegardé";
+endif
+
+if (Suivi des messages ?) then (Oui)
+  :Consulter le statut des messages envoyés;
+  :Voir les messages lus/non lus;
+  :Suivre les réponses;
+endif
+
+if (Recherche dans les messages ?) then (Oui)
+  :Saisir un terme de recherche;
+  :Filtrer par destinataire;
+  :Filtrer par date;
+  :Afficher les résultats;
+endif
+
+if (Nouvelles notifications ?) then (Oui)
+  :Afficher les notifications;
+  :Marquer comme lues;
+  :Mettre à jour le compteur;
+endif
+
+:Retourner à la liste des messages;
+stop
+
+@enduml

@@ -1,0 +1,95 @@
+@startuml
+title Diagramme de Cas d'Utilisation - Administrateur
+
+actor Administrateur
+
+usecase ConsulterDashboard
+usecase ConsulterUtilisateurs
+usecase CreerUtilisateur
+usecase AfficherUtilisateur
+usecase ModifierUtilisateur
+usecase SupprimerUtilisateur
+usecase ConsulterSignalements
+usecase AfficherSignalement
+usecase TraiterSignalement
+usecase ConsulterPlaintes
+usecase AfficherPlainte
+usecase TraiterPlainte
+usecase ConsulterItineraires
+usecase CreerItineraire
+usecase AfficherItineraire
+usecase ModifierItineraire
+usecase SupprimerItineraire
+usecase ConsulterCalendrier
+usecase CreerCalendrier
+usecase AfficherCalendrier
+usecase ModifierCalendrier
+usecase SupprimerCalendrier
+usecase SuperviserOperations
+usecase ConsulterCampagnes
+usecase CreerCampagne
+usecase AfficherCampagne
+usecase ModifierCampagne
+usecase SupprimerCampagne
+usecase PublierCampagne
+usecase ArchiverCampagne
+usecase ConsulterNotifications
+usecase EnvoyerMessages
+usecase ConsulterStatistiques
+usecase ExporterRapports
+
+Administrateur --> ConsulterDashboard
+Administrateur --> ConsulterUtilisateurs
+Administrateur --> CreerUtilisateur
+Administrateur --> AfficherUtilisateur
+Administrateur --> ModifierUtilisateur
+Administrateur --> SupprimerUtilisateur
+Administrateur --> ConsulterSignalements
+Administrateur --> AfficherSignalement
+Administrateur --> TraiterSignalement
+Administrateur --> ConsulterPlaintes
+Administrateur --> AfficherPlainte
+Administrateur --> TraiterPlainte
+Administrateur --> ConsulterItineraires
+Administrateur --> CreerItineraire
+Administrateur --> AfficherItineraire
+Administrateur --> ModifierItineraire
+Administrateur --> SupprimerItineraire
+Administrateur --> ConsulterCalendrier
+Administrateur --> CreerCalendrier
+Administrateur --> AfficherCalendrier
+Administrateur --> ModifierCalendrier
+Administrateur --> SupprimerCalendrier
+Administrateur --> SuperviserOperations
+Administrateur --> ConsulterCampagnes
+Administrateur --> CreerCampagne
+Administrateur --> AfficherCampagne
+Administrateur --> ModifierCampagne
+Administrateur --> SupprimerCampagne
+Administrateur --> PublierCampagne
+Administrateur --> ArchiverCampagne
+Administrateur --> ConsulterNotifications
+Administrateur --> EnvoyerMessages
+Administrateur --> ConsulterStatistiques
+Administrateur --> ExporterRapports
+
+AfficherUtilisateur --> ConsulterUtilisateurs
+ModifierUtilisateur --> AfficherUtilisateur
+SupprimerUtilisateur --> AfficherUtilisateur
+AfficherSignalement --> ConsulterSignalements
+TraiterSignalement --> AfficherSignalement
+AfficherPlainte --> ConsulterPlaintes
+TraiterPlainte --> AfficherPlainte
+AfficherItineraire --> ConsulterItineraires
+ModifierItineraire --> AfficherItineraire
+SupprimerItineraire --> AfficherItineraire
+AfficherCalendrier --> ConsulterCalendrier
+ModifierCalendrier --> AfficherCalendrier
+SupprimerCalendrier --> AfficherCalendrier
+AfficherCampagne --> ConsulterCampagnes
+ModifierCampagne --> AfficherCampagne
+SupprimerCampagne --> AfficherCampagne
+PublierCampagne --> AfficherCampagne
+ArchiverCampagne --> AfficherCampagne
+
+@enduml

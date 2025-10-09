@@ -1,0 +1,124 @@
+@startuml
+!theme plain
+title Diagramme de Séquence - Administrateur Crée un Itinéraire
+
+actor "Administrateur" as Admin
+participant "Système" as System
+
+== Accès à la Gestion des Itinéraires ==
+
+Admin -> System: Accède au tableau de bord
+System -> Admin: Affiche le dashboard
+
+Admin -> System: Clique sur "Gérer les Itinéraires"
+System -> System: Récupère la liste des itinéraires existants
+note right: Filtrage possible par statut et collecteur\nTri par date de création
+
+System -> Admin: Affiche la liste des itinéraires
+note right: Nom, collecteur, type, statut, dates\nBoutons d'action (voir, modifier, supprimer)
+
+== Création d'un Nouvel Itinéraire ==
+
+Admin -> System: Clique sur "Nouvel Itinéraire"
+System -> System: Récupère la liste des collecteurs disponibles
+note right: SELECT users WHERE role = 'collecteur'\nTri par nom
+
+System -> Admin: Affiche le formulaire de création
+note right: Formulaire avec tous les champs nécessaires\nListe déroulante des collecteurs
+
+== Saisie des Informations ==
+
+Admin -> System: Sélectionne le collecteur assigné
+note right: Liste déroulante des collecteurs actifs
+
+Admin -> System: Saisit le nom de l'itinéraire
+note right: Obligatoire, max 255 caractères
+
+Admin -> System: Sélectionne le type d'itinéraire
+note right: quotidien, hebdomadaire, mensuel, ponctuel
+
+Admin -> System: Saisit les dates de début et fin
+note right: Date fin optionnelle\nDate fin >= date début
+
+Admin -> System: Définit les heures de début et fin
+note right: Format HH:MM\nHeure fin > heure début
+
+Admin -> System: Saisit la description
+note right: Optionnelle, description courte
+
+Admin -> System: Estime la distance en kilomètres
+note right: Optionnel, décimal avec 2 décimales
+
+Admin -> System: Estime la durée en minutes
+note right: Optionnel, entier
+
+Admin -> System: Ajoute des notes optionnelles
+note right: Notes complémentaires pour le collecteur
+
+== Soumission du Formulaire ==
+
+Admin -> System: Clique sur "Créer l'itinéraire"
+
+System -> System: Valide les données saisies
+note right: nom: required|string|max:255\ntype: required|string\ncollecteur_id: required|exists:users,id\ndate_debut: nullable|date\ndate_fin: nullable|date|after_or_equal:date_debut\nstatut: nullable|string
+
+alt Validation réussie
+    System -> System: Enregistre l'itinéraire en base
+    note right: INSERT INTO itineraires\nadmin_id = Auth::id()\nstatut = 'planifie' par défaut
+    
+    System -> System: Notifie le collecteur assigné
+    note right: Création d'une notification\npour informer le collecteur
+    
+    System -> Admin: Confirme la création
+    note right: "Itinéraire créé avec succès"
+    System -> Admin: Redirige vers la liste des itinéraires
+    
+else Validation échoue
+    System -> Admin: Affiche les erreurs de validation
+    note right: "Nom requis"\n"Collecteur requis"\n"Date fin invalide"
+    Admin -> System: Corrige les erreurs et renvoie
+end
+
+== Scénarios Alternatifs ==
+
+note over Admin, System: Itinéraire récurrent
+alt Itinéraire récurrent (quotidien/hebdomadaire/mensuel)
+    System -> System: Calcule automatiquement les dates
+    System -> System: Crée les occurrences futures
+    System -> Admin: "Itinéraire récurrent créé"
+    note right: Génération automatique des itinéraires\npour les périodes suivantes
+end
+
+note over Admin, System: Attribution automatique
+alt Attribution automatique du collecteur
+    System -> System: Vérifie la disponibilité du collecteur
+    System -> System: Évite les conflits d'horaires
+    System -> Admin: "Collecteur assigné automatiquement"
+    note right: Algorithme d'optimisation\nselon la charge de travail
+end
+
+note over Admin, System: Calcul automatique
+alt Calcul automatique distance/durée
+    System -> System: Calcule la distance estimée
+    System -> System: Estime la durée de parcours
+    System -> Admin: "Distance et durée calculées"
+    note right: Basé sur les points de collecte\net l'itinéraire optimal
+end
+
+note over Admin, System: Notification au collecteur
+alt Notification au collecteur
+    System -> System: Envoie notification au collecteur
+    System -> System: Inclut les détails de l'itinéraire
+    System -> Admin: "Collecteur notifié"
+    note right: Email ou notification push\navec lien vers l'itinéraire
+end
+
+note over Admin, System: Vérification des conflits
+alt Vérification des conflits
+    System -> System: Vérifie les conflits d'horaires
+    System -> System: Vérifie la disponibilité du collecteur
+    System -> Admin: "Conflit détecté"
+    note right: Avertissement si le collecteur\nest déjà assigné à un autre itinéraire
+end
+
+@enduml

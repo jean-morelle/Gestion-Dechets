@@ -1,0 +1,74 @@
+@startuml
+title Diagramme de Sequence - Collecteur
+
+actor Collecteur
+participant "Interface Web" as UI
+participant "CollecteurController" as CC
+participant "Base de Donnees" as DB
+
+== Connexion ==
+Collecteur -> UI: Se connecter
+UI -> CC: Authentification
+CC -> DB: Verifier credentials
+DB --> CC: Utilisateur valide
+CC --> UI: Session creee
+UI --> Collecteur: Acces au dashboard
+
+== Consultation des itineraires ==
+Collecteur -> UI: Cliquer "Mes Itineraires"
+UI -> CC: Lister itineraires
+CC -> DB: Recuperer itineraires assignes
+DB --> CC: Liste itineraires
+CC --> UI: Afficher itineraires
+UI --> Collecteur: Liste des itineraires
+
+== Demarrage d'un itineraire ==
+Collecteur -> UI: Cliquer "Demarrer Itineraire"
+UI -> CC: Demarrer itineraire
+CC -> DB: Mettre a jour statut "en_cours"
+DB --> CC: Itineraire demarre
+CC --> UI: Confirmation
+UI --> Collecteur: "Itineraire demarre"
+
+== Gestion des collectes ==
+Collecteur -> UI: Cliquer "Mes Collectes"
+UI -> CC: Lister collectes
+CC -> DB: Recuperer collectes assignees
+DB --> CC: Liste collectes
+CC --> UI: Afficher collectes
+UI --> Collecteur: Liste des collectes
+
+== Demarrage d'une collecte ==
+Collecteur -> UI: Cliquer "Demarrer Collecte"
+UI -> CC: Demarrer collecte
+CC -> DB: Mettre a jour statut "en_cours"
+CC -> DB: Enregistrer geolocalisation
+DB --> CC: Collecte demarree
+CC --> UI: Confirmation
+UI --> Collecteur: "Collecte demarree"
+
+== Validation d'une collecte ==
+Collecteur -> UI: Cliquer "Valider Collecte"
+UI -> CC: Afficher formulaire validation
+CC --> UI: Formulaire avec photo
+Collecteur -> UI: Upload photo + quantite
+UI -> CC: Envoyer validation
+CC -> DB: Mettre a jour statut "termine"
+CC -> DB: Sauvegarder photo + quantite
+DB --> CC: Collecte validee
+CC --> UI: Confirmation
+UI --> Collecteur: "Collecte validee"
+
+== Signalement d'incident ==
+Collecteur -> UI: Cliquer "Signaler Incident"
+UI -> CC: Afficher formulaire
+CC --> UI: Formulaire incident
+Collecteur -> UI: Remplir incident
+UI -> CC: Envoyer incident
+CC -> DB: Sauvegarder incident
+DB --> CC: Incident cree
+CC -> DB: Notifier admin
+CC --> UI: Confirmation
+UI --> Collecteur: "Incident signale"
+
+@enduml

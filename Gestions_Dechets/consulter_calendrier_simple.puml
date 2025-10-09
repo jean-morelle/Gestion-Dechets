@@ -1,0 +1,67 @@
+@startuml
+title Diagramme de Séquence - Consulter le Calendrier de Collecte
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur "Calendrier de collecte"
+System -> System: Récupère les données du calendrier
+System -> Citoyen: Affiche le calendrier du mois en cours
+
+System -> Citoyen: Montre les jours de collecte avec codes couleur
+System -> Citoyen: Affiche les types de collecte
+
+Citoyen -> System: Navigue entre les mois (précédent/suivant)
+System -> System: Récupère les données du nouveau mois
+System -> Citoyen: Met à jour l'affichage
+
+Citoyen -> System: Sélectionne une date spécifique
+System -> Citoyen: Affiche les détails (type, horaires, instructions)
+
+Citoyen -> System: Clique sur un jour de collecte
+System -> Citoyen: Affiche les informations complémentaires
+
+Citoyen -> System: Filtre par type de collecte
+System -> System: Applique le filtre
+System -> Citoyen: Met à jour l'affichage selon les filtres
+
+Citoyen -> System: Filtre par zone/quartier
+System -> System: Applique le filtre de zone
+System -> Citoyen: Affiche uniquement les collectes de la zone
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **Accès via notification**
+System -> Citoyen: Envoie notification de changement de calendrier
+Citoyen -> System: Clique sur la notification
+System -> Citoyen: Accède directement au calendrier
+System -> Citoyen: Met en évidence les modifications
+
+note over Citoyen, System: **Calendrier vide**
+System -> System: Récupère les données
+System -> Citoyen: Affiche "Aucune collecte planifiée"
+Citoyen -> System: Peut changer de mois ou contacter l'administration
+
+note over Citoyen, System: **Recherche de date spécifique**
+Citoyen -> System: Utilise la fonction de recherche de date
+Citoyen -> System: Saisit une date spécifique
+System -> System: Récupère les données pour cette date
+System -> Citoyen: Affiche directement le mois et la date
+
+note over Citoyen, System: **Informations détaillées**
+Citoyen -> System: Clique sur "Plus de détails"
+System -> Citoyen: Affiche popup ou nouvelle page
+System -> Citoyen: Informations complètes (horaires, types, zones, contacts)
+
+note over Citoyen, System: **Filtrage par type de déchets**
+Citoyen -> System: Sélectionne "Déchets ménagers uniquement"
+System -> System: Applique le filtre
+System -> Citoyen: Ne montre que les jours de collecte ménagers
+System -> Citoyen: Grises ou masque les autres types
+
+@enduml
+
+
+

@@ -1,0 +1,27 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Signaler un Incident
+
+start
+
+:Remplir le formulaire de signalement;
+
+if (Photos à ajouter ?) then (Oui)
+  :Télécharger des photos;
+else (Non)
+endif
+
+:Envoyer le signalement;
+
+if (Informations valides ?) then (Oui)
+  :Enregistrer le signalement;
+  :Générer numéro de référence;
+  :Confirmer l'envoi;
+  stop
+else (Non)
+  :Afficher les erreurs;
+  :Retour au formulaire;
+  stop
+endif
+
+@enduml

@@ -1,0 +1,53 @@
+@startuml Diagramme_Cas_Utilisation_Citoyen
+
+!theme plain
+skinparam actorStyle awesome
+skinparam usecaseStyle rectangle
+
+actor "Citoyen" as Citoyen #lightblue
+
+rectangle "Cas d'utilisation - Citoyen" {
+  usecase "Consulter le tableau de bord" as UC1
+  usecase "Signaler un problème de déchets" as UC2
+  usecase "Consulter ses signalements" as UC3
+  usecase "Déposer une plainte" as UC4
+  usecase "Consulter ses plaintes" as UC5
+  usecase "Faire une demande de collecte" as UC6
+  usecase "Consulter ses demandes de collecte" as UC7
+  usecase "Consulter le calendrier de collecte" as UC8
+  usecase "Gérer ses rappels" as UC9
+  usecase "Gérer ses notifications" as UC10
+  usecase "Configurer ses paramètres" as UC11
+  usecase "Consulter son profil" as UC12
+  usecase "Envoyer un message" as UC13
+  usecase "Consulter les campagnes de sensibilisation" as UC14
+}
+
+' Relations principales
+Citoyen --> UC1
+Citoyen --> UC2
+Citoyen --> UC3
+Citoyen --> UC4
+Citoyen --> UC5
+Citoyen --> UC6
+Citoyen --> UC7
+Citoyen --> UC8
+Citoyen --> UC9
+Citoyen --> UC10
+Citoyen --> UC11
+Citoyen --> UC12
+Citoyen --> UC13
+Citoyen --> UC14
+
+' Relations d'inclusion
+UC2 ..> UC13 : <<include>>
+UC4 ..> UC13 : <<include>>
+UC6 ..> UC13 : <<include>>
+
+@enduml
+
+
+
+
+
+

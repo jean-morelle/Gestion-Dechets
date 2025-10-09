@@ -1,0 +1,93 @@
+@startuml
+title Diagramme de Description Textuelle - Envoyer des Messages
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+database "Base de données" as DB
+actor "Administrateur" as Admin
+actor "Collecteur" as Collecteur
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur "Messages"
+System -> DB: Récupère les conversations existantes
+System -> Citoyen: Affiche l'interface de messagerie
+
+Citoyen -> System: Clique sur "Nouveau message"
+System -> Citoyen: Affiche le formulaire de composition
+
+Citoyen -> System: Sélectionne le destinataire (Admin, Collecteur, Support)
+System -> System: Affiche les informations du destinataire
+
+Citoyen -> System: Saisit l'objet/sujet du message
+Citoyen -> System: Rédige le contenu du message
+Citoyen -> System: Joint des fichiers (photos, documents)
+System -> System: Vérifie la taille et le format des fichiers
+
+Citoyen -> System: Relit son message
+Citoyen -> System: Clique sur "Envoyer"
+
+System -> System: Valide le contenu et les pièces jointes
+System -> DB: Enregistre le message
+System -> System: Envoie le message au destinataire
+
+System -> Admin: Envoie notification au destinataire
+System -> Citoyen: Affiche confirmation d'envoi
+System -> Citoyen: Le message apparaît dans la conversation
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **2a. Réponse à un message existant**
+Citoyen -> System: Clique sur "Répondre" dans une conversation
+System -> System: Pré-remplit le destinataire et l'objet
+Citoyen -> System: Compose sa réponse
+
+note over Citoyen, System: **3a. Message lié à un signalement/plainte**
+Citoyen -> System: Sélectionne "Lier à un signalement existant"
+System -> DB: Récupère les signalements du citoyen
+System -> Citoyen: Affiche la liste des signalements
+Citoyen -> System: Sélectionne un signalement
+System -> System: Pré-remplit le contexte
+System -> System: Lie automatiquement le message au dossier
+
+note over Citoyen, System: **3b. Message urgent**
+Citoyen -> System: Marque le message comme "Urgent"
+System -> System: Envoie notification prioritaire
+System -> Admin: Traite le message en priorité
+
+note over Citoyen, System: **4a. Pièces jointes**
+Citoyen -> System: Télécharge des fichiers
+System -> System: Vérifie la taille et le format
+System -> Citoyen: Affiche message d'erreur avec contraintes si problème
+
+note over Citoyen, System: **4b. Message long**
+Citoyen -> System: Rédige un message long
+System -> System: Propose de sauvegarder en brouillon
+Citoyen -> System: Peut continuer plus tard
+
+note over Citoyen, System: **5a. Contenu vide ou invalide**
+System -> System: Vérifie que l'objet et le contenu ne sont pas vides
+System -> Citoyen: Affiche message d'erreur si problème
+Citoyen -> System: Corrige et renvoie
+
+note over Citoyen, System: **5b. Destinataire indisponible**
+System -> System: Vérifie la disponibilité du destinataire
+System -> Citoyen: Propose d'envoyer quand même ou d'attendre
+System -> System: Met le message en file d'attente si nécessaire
+
+note over Citoyen, System: **6a. Erreur d'envoi**
+System -> System: Tentative d'envoi échoue
+System -> Citoyen: Affiche "Erreur lors de l'envoi. Veuillez réessayer."
+System -> DB: Sauvegarde le message en brouillon
+Citoyen -> System: Peut réessayer plus tard
+
+note over Citoyen, System: **6b. Message en attente de modération**
+System -> System: Détecte que le message nécessite modération
+System -> Citoyen: Informe que le message sera vérifié
+System -> System: Met le message en file de modération
+System -> Citoyen: Envoie notification quand le message est approuvé
+
+@enduml
+
+
+

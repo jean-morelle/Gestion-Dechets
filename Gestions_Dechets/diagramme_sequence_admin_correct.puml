@@ -1,0 +1,88 @@
+@startuml
+title Diagramme de Sequence - Administrateur
+
+actor Administrateur
+participant "Interface" as UI
+participant "Controller" as CTRL
+participant "Base de Donnees" as DB
+participant "NotificationService" as NOTIF
+
+== Creation d'une campagne ==
+Administrateur -> UI: 1. Clique "Campagnes"
+UI -> CTRL: 2. GET /admin/campagnes
+CTRL -> DB: 3. SELECT campagnes
+DB -> CTRL: 4. Liste campagnes
+CTRL -> UI: 5. Vue campagnes
+UI -> Administrateur: 6. Liste affichee
+
+Administrateur -> UI: 7. Clique "Nouvelle Campagne"
+UI -> CTRL: 8. GET /admin/campagnes/create
+CTRL -> UI: 9. Formulaire creation
+UI -> Administrateur: 10. Formulaire affiche
+
+Administrateur -> UI: 11. Remplit + upload fichier
+UI -> CTRL: 12. POST /admin/campagnes
+CTRL -> DB: 13. INSERT campagne
+DB -> CTRL: 14. Campagne creee
+CTRL -> NOTIF: 15. Notifier utilisateurs
+NOTIF -> DB: 16. INSERT notifications
+DB -> NOTIF: 17. Notifications creees
+CTRL -> UI: 18. Redirection
+UI -> Administrateur: 19. "Campagne creee"
+
+== Traitement d'un signalement ==
+Administrateur -> UI: 20. Clique "Signalements"
+UI -> CTRL: 21. GET /admin/signalements
+CTRL -> DB: 22. SELECT signalements
+DB -> CTRL: 23. Liste signalements
+CTRL -> UI: 24. Vue signalements
+UI -> Administrateur: 25. Liste affichee
+
+Administrateur -> UI: 26. Clique "Traiter"
+UI -> CTRL: 27. GET /admin/signalements/{id}
+CTRL -> DB: 28. SELECT signalement
+DB -> CTRL: 29. Details signalement
+CTRL -> UI: 30. Formulaire traitement
+UI -> Administrateur: 31. Formulaire affiche
+
+Administrateur -> UI: 32. Remplit traitement
+UI -> CTRL: 33. POST /admin/signalements/{id}/traiter
+CTRL -> DB: 34. UPDATE statut = 'traite'
+DB -> CTRL: 35. Confirmation
+CTRL -> UI: 36. Redirection
+UI -> Administrateur: 37. "Signalement traite"
+
+== Creation d'un itineraire ==
+Administrateur -> UI: 38. Clique "Itineraires"
+UI -> CTRL: 39. GET /admin/itineraires
+CTRL -> DB: 40. SELECT itineraires
+DB -> CTRL: 41. Liste itineraires
+CTRL -> UI: 42. Vue itineraires
+UI -> Administrateur: 43. Liste affichee
+
+Administrateur -> UI: 44. Clique "Nouvel Itineraire"
+UI -> CTRL: 45. GET /admin/itineraires/create
+CTRL -> UI: 46. Formulaire creation
+UI -> Administrateur: 47. Formulaire affiche
+
+Administrateur -> UI: 48. Remplit + selectionne points
+UI -> CTRL: 49. POST /admin/itineraires
+CTRL -> DB: 50. INSERT itineraire + points
+DB -> CTRL: 51. Itineraire cree
+CTRL -> UI: 52. Redirection
+UI -> Administrateur: 53. "Itineraire cree"
+
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+

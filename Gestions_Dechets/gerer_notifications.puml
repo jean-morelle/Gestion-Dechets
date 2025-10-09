@@ -1,0 +1,95 @@
+@startuml
+title Diagramme de Description Textuelle - Gérer ses Notifications
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+database "Base de données" as DB
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur l'icône de notification (badge avec nombre)
+System -> DB: Récupère les notifications non lues
+DB -> System: Retourne la liste des notifications
+System -> Citoyen: Affiche la liste des notifications non lues
+
+Citoyen -> System: Accède à "Toutes les notifications"
+System -> DB: Récupère toutes les notifications
+System -> Citoyen: Affiche les notifications par ordre chronologique
+
+note over Citoyen, System: **Consultation des notifications**
+System -> Citoyen: Montre type, titre, date, statut (lue/non lue)
+System -> Citoyen: Affiche aperçu du contenu
+
+Citoyen -> System: Clique sur une notification
+System -> Citoyen: Affiche le contenu complet
+System -> DB: Marque la notification comme lue
+System -> Citoyen: Permet d'accéder à l'action liée
+
+Citoyen -> System: Marque une notification comme lue/non lue
+System -> DB: Met à jour le statut de la notification
+
+Citoyen -> System: Supprime une notification
+System -> DB: Supprime la notification
+
+Citoyen -> System: Marque toutes les notifications comme lues
+System -> DB: Met à jour toutes les notifications
+
+Citoyen -> System: Accède aux paramètres de notifications
+System -> Citoyen: Affiche les options de configuration
+Citoyen -> System: Configure les types de notifications souhaités
+Citoyen -> System: Configure les canaux (email, SMS, push)
+System -> DB: Sauvegarde les préférences
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **1a. Aucune notification**
+System -> DB: Vérifie les notifications
+DB -> System: Aucune notification trouvée
+System -> Citoyen: Affiche "Aucune notification"
+System -> Citoyen: Affiche message d'encouragement
+
+note over Citoyen, System: **2a. Notifications groupées**
+System -> System: Groupe les notifications similaires
+System -> Citoyen: Affiche les groupes
+Citoyen -> System: Développe un groupe pour voir les détails
+System -> System: Archive automatiquement les notifications anciennes
+
+note over Citoyen, System: **3a. Notification avec action**
+System -> Citoyen: Affiche notification avec boutons d'action
+Citoyen -> System: Clique sur un bouton d'action
+System -> System: Traite l'action sans quitter la page
+System -> DB: Met à jour le statut
+
+note over Citoyen, System: **3b. Notification expirée**
+System -> System: Vérifie la date d'expiration
+System -> Citoyen: Affiche "Expirée" et désactive les actions
+Citoyen -> System: Peut supprimer la notification expirée
+
+note over Citoyen, System: **4a. Suppression en lot**
+Citoyen -> System: Sélectionne plusieurs notifications
+Citoyen -> System: Clique sur "Supprimer sélectionnées"
+System -> Citoyen: Demande confirmation
+Citoyen -> System: Confirme la suppression
+System -> DB: Supprime les notifications sélectionnées
+
+note over Citoyen, System: **4b. Archive automatique**
+System -> System: Détecte notifications anciennes (> 30 jours)
+System -> DB: Archive automatiquement les anciennes notifications
+Citoyen -> System: Peut accéder aux archives
+Citoyen -> System: Peut supprimer définitivement les archives
+
+note over Citoyen, System: **5a. Désactivation temporaire**
+Citoyen -> System: Désactive temporairement certains types
+Citoyen -> System: Définit une période (vacances, absence)
+System -> DB: Suspend les notifications
+System -> System: Programme la reprise automatique
+
+note over Citoyen, System: **5b. Notifications urgentes**
+System -> System: Identifie les notifications urgentes
+System -> Citoyen: Affiche toujours en priorité
+System -> Citoyen: Permet seulement de réduire la fréquence
+
+@enduml
+
+
+

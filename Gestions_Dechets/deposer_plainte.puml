@@ -1,0 +1,74 @@
+@startuml
+title Diagramme de Description Textuelle - Déposer une Plainte
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+database "Base de données" as DB
+actor "Administrateur" as Admin
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur "Déposer une plainte"
+System -> Citoyen: Affiche le formulaire de plainte
+
+Citoyen -> System: Sélectionne la catégorie de plainte
+Citoyen -> System: Sélectionne la gravité (légère, modérée, grave)
+Citoyen -> System: Saisit un titre descriptif
+Citoyen -> System: Décrit les faits et circonstances
+Citoyen -> System: Indique la date et heure de l'incident
+Citoyen -> System: Précise la localisation
+
+Citoyen -> System: Télécharge des photos ou documents
+System -> System: Vérifie la taille et format des fichiers
+
+Citoyen -> System: Précise la demande de réparation
+Citoyen -> System: Indique s'il souhaite rester anonyme
+Citoyen -> System: Clique sur "Déposer la plainte"
+
+System -> System: Valide les informations saisies
+System -> DB: Enregistre la plainte
+System -> System: Génère un numéro de référence
+
+System -> Admin: Envoie une notification
+System -> Citoyen: Affiche message de confirmation
+System -> Citoyen: Attribue un numéro de suivi
+System -> Citoyen: Envoie un email de confirmation
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **2a. Plainte liée à un signalement existant**
+Citoyen -> System: Sélectionne "Lier à un signalement"
+System -> Citoyen: Affiche la liste des signalements
+Citoyen -> System: Sélectionne un signalement
+System -> System: Pré-remplit certaines informations
+Citoyen -> System: Complète les détails spécifiques
+
+note over Citoyen, System: **3a. Incident récurrent**
+Citoyen -> System: Indique "Problème récurrent"
+System -> System: Vérifie les signalements précédents
+System -> Citoyen: Suggère de vérifier les signalements antérieurs
+Citoyen -> System: Décide de créer une plainte groupée
+
+note over Citoyen, System: **4a. Problème avec les fichiers**
+System -> System: Vérifie la taille et le format
+System -> Citoyen: Affiche message d'erreur avec contraintes
+Citoyen -> System: Corrige et réessaie
+
+note over Citoyen, System: **6a. Plainte en doublon**
+System -> DB: Vérifie les plaintes similaires récentes
+DB -> System: Retourne plainte similaire trouvée
+System -> Citoyen: Propose de consulter la plainte existante
+Citoyen -> System: Confirme ou modifie sa plainte
+
+note over Citoyen, System: **7a. Plainte grave**
+System -> System: Détecte gravité élevée
+System -> Admin: Notification immédiate et prioritaire
+System -> Citoyen: Informe du suivi accéléré
+
+note over Citoyen, System: **6b. Informations manquantes**
+System -> System: Vérifie les champs obligatoires
+System -> Citoyen: Affiche les champs manquants
+Citoyen -> System: Complète les informations manquantes
+Citoyen -> System: Renvoie le formulaire
+
+@enduml

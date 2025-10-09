@@ -1,0 +1,38 @@
+@startuml
+!theme plain
+title Organigramme Fonctionnel - Citoyen
+
+skinparam defaultTextAlignment center
+skinparam backgroundColor black
+skinparam rectangle {
+  BackgroundColor white
+  FontColor black
+  BorderColor black
+}
+
+rectangle "Citoyen" #lightblue
+
+rectangle "Authentification" #white
+rectangle "Dashboard" #white
+rectangle "Signaler problème\nde déchets" #white
+rectangle "Déposer plaintes" #white  
+rectangle "Faire demande\nde collecte" #white
+rectangle "Consulter calendrier\nde collecte" #white
+rectangle "Consulter ses\nnotifications" #white
+rectangle "Consulter ses\nitinéraires" #white
+rectangle "Envoyer messages" #white
+rectangle "Consulter les campagnes\nde sensibilisation" #white
+
+"Citoyen" -down-> "Authentification"
+"Citoyen" -down-> "Dashboard"
+"Citoyen" -down-> "Signaler problème\nde déchets"
+"Citoyen" -down-> "Déposer plaintes"
+"Citoyen" -down-> "Faire demande\nde collecte"
+"Citoyen" -down-> "Consulter calendrier\nde collecte"
+
+"Citoyen" -down-> "Consulter ses\nnotifications"
+"Citoyen" -down-> "Consulter ses\nitinéraires"
+"Citoyen" -down-> "Envoyer messages"
+"Citoyen" -down-> "Consulter les campagnes\nde sensibilisation"
+
+@enduml

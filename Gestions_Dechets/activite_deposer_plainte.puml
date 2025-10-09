@@ -1,0 +1,102 @@
+@startuml
+title Diagramme d'Activité - Déposer une Plainte
+
+start
+
+:Citoyen authentifié;
+:Cliquer sur "Déposer une plainte";
+
+:Afficher le formulaire de plainte;
+
+:Sélectionner la catégorie de plainte;
+note right
+  - Service de collecte
+  - Comportement collecteur
+  - Infrastructure
+  - Autre
+end note
+
+:Sélectionner la gravité;
+note right
+  - Légère
+  - Modérée
+  - Grave
+end note
+
+if (Lier à un signalement existant ?) then (Oui)
+  :Sélectionner "Lier à un signalement";
+  :Afficher la liste des signalements;
+  :Sélectionner un signalement;
+  :Pré-remplir certaines informations;
+  :Compléter les détails spécifiques;
+else (Non)
+  :Continuer avec la plainte normale;
+endif
+
+if (Incident récurrent ?) then (Oui)
+  :Indiquer "Problème récurrent";
+  :Vérifier les signalements précédents;
+  :Suggérer de consulter les signalements antérieurs;
+  :Décider de créer une plainte groupée;
+else (Non)
+  :Continuer avec la plainte normale;
+endif
+
+:Saisir un titre descriptif de la plainte;
+
+:Décrire en détail les faits et circonstances;
+
+:Indiquer la date et l'heure de l'incident;
+
+:Préciser la localisation de l'incident;
+
+:Télécharger des photos ou documents justificatifs;
+if (Fichiers valides ?) then (Oui)
+  :Fichiers téléchargés avec succès;
+else (Non)
+  :Afficher message d'erreur avec contraintes;
+  :Corriger et réessayer;
+endif
+
+:Préciser la demande de réparation;
+
+:Indiquer s'il souhaite rester anonyme;
+
+:Cliquer sur "Déposer la plainte";
+
+:Système valide les informations;
+
+if (Informations complètes ?) then (Oui)
+  :Vérifier les plaintes similaires récentes;
+  
+  if (Plainte similaire trouvée ?) then (Oui)
+    :Proposer de consulter la plainte existante;
+    :Confirmer ou modifier la plainte;
+  else (Non)
+    :Continuer avec l'enregistrement;
+  endif
+  
+  :Enregistrer la plainte;
+  :Générer un numéro de référence;
+  
+  if (Gravité élevée ?) then (Oui)
+    :Notification immédiate à l'administrateur;
+    :Informer du suivi accéléré;
+  else (Non)
+    :Notification normale à l'administrateur;
+  endif
+  
+  :Afficher message de confirmation;
+  :Attribuer un numéro de suivi;
+  :Envoyer email de confirmation avec numéro;
+  stop
+else (Non)
+  :Afficher les champs obligatoires manquants;
+  :Compléter les informations manquantes;
+  :Renvoyer le formulaire;
+endif
+
+@enduml
+
+
+

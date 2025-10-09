@@ -1,0 +1,42 @@
+@startuml
+title Organigramme fonctionnel du système de gestion des déchets
+
+skinparam defaultTextAlignment center
+
+rectangle "Accueil" {
+  rectangle "Authentification"
+  rectangle "Tableau de bord\n(selon acteur)"
+  rectangle "Gestion des utilisateurs"
+}
+
+rectangle "Citoyen" {
+  rectangle "Signaler un problème"
+  rectangle "Déposer une plainte"
+  rectangle "Demande de collecte"
+  rectangle "Consulter calendrier"
+  rectangle "Consulter historique"
+}
+
+rectangle "Collecteur" {
+  rectangle "Consulter les itinéraires"
+  rectangle "Gérer les collectes"
+  rectangle "Valider collecte"
+  rectangle "Signaler incident"
+  rectangle "Terminer itinéraire"
+}
+
+rectangle "Administrateur" {
+  rectangle "Gestion des utilisateurs"
+  rectangle "Gestion des signalements"
+  rectangle "Gestion des plaintes"
+  rectangle "Créer itinéraires"
+  rectangle "Planification des collectes"
+  rectangle "Supervision opérations"
+  rectangle "Rapports statistiques"
+}
+
+' Connexions depuis Accueil vers chaque acteur
+"Accueil" -down-> "Citoyen"
+"Accueil" -down-> "Collecteur"
+"Accueil" -down-> "Administrateur"
+@enduml

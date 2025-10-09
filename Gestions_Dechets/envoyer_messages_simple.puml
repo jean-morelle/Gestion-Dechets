@@ -1,0 +1,80 @@
+@startuml
+title Diagramme de Séquence - Envoyer des Messages
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur "Messages"
+System -> System: Récupère les conversations existantes
+System -> Citoyen: Affiche l'interface de messagerie
+
+Citoyen -> System: Clique sur "Nouveau message"
+System -> Citoyen: Affiche le formulaire de composition
+
+Citoyen -> System: Sélectionne le destinataire
+System -> System: Affiche les informations du destinataire
+
+Citoyen -> System: Saisit l'objet/sujet du message
+Citoyen -> System: Rédige le contenu du message
+Citoyen -> System: Joint des fichiers (photos, documents)
+System -> System: Vérifie la taille et le format des fichiers
+
+Citoyen -> System: Relit son message
+Citoyen -> System: Clique sur "Envoyer"
+
+System -> System: Valide le contenu et les pièces jointes
+System -> System: Enregistre le message
+System -> System: Envoie le message au destinataire
+
+System -> System: Envoie notification au destinataire
+System -> Citoyen: Affiche confirmation d'envoi
+System -> Citoyen: Le message apparaît dans la conversation
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **Réponse à un message existant**
+Citoyen -> System: Clique sur "Répondre" dans une conversation
+System -> System: Pré-remplit le destinataire et l'objet
+Citoyen -> System: Compose sa réponse
+
+note over Citoyen, System: **Message lié à un signalement/plainte**
+Citoyen -> System: Sélectionne "Lier à un signalement existant"
+System -> System: Récupère les signalements du citoyen
+System -> Citoyen: Affiche la liste des signalements
+Citoyen -> System: Sélectionne un signalement
+System -> System: Pré-remplit le contexte
+System -> System: Lie automatiquement le message au dossier
+
+note over Citoyen, System: **Message urgent**
+Citoyen -> System: Marque le message comme "Urgent"
+System -> System: Envoie notification prioritaire
+System -> System: Traite le message en priorité
+
+note over Citoyen, System: **Pièces jointes**
+Citoyen -> System: Télécharge des fichiers
+System -> System: Vérifie la taille et le format
+System -> Citoyen: Affiche message d'erreur avec contraintes si problème
+
+note over Citoyen, System: **Contenu vide ou invalide**
+System -> System: Vérifie que l'objet et le contenu ne sont pas vides
+System -> Citoyen: Affiche message d'erreur si problème
+Citoyen -> System: Corrige et renvoie
+
+note over Citoyen, System: **Erreur d'envoi**
+System -> System: Tentative d'envoi échoue
+System -> Citoyen: Affiche "Erreur lors de l'envoi. Veuillez réessayer."
+System -> System: Sauvegarde le message en brouillon
+Citoyen -> System: Peut réessayer plus tard
+
+note over Citoyen, System: **Message en attente de modération**
+System -> System: Détecte que le message nécessite modération
+System -> Citoyen: Informe que le message sera vérifié
+System -> System: Met le message en file de modération
+System -> Citoyen: Envoie notification quand le message est approuvé
+
+@enduml
+
+
+

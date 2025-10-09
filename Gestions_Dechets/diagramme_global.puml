@@ -1,0 +1,74 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam actorStyle awesome
+
+title Diagramme de Cas d'Utilisation Global - Systeme de Gestion des Dechets
+
+actor "Citoyen" as Citoyen
+actor "Collecteur" as Collecteur
+actor "Administrateur" as Admin
+
+package "Systeme de Gestion des Dechets" {
+    usecase "Signaler un probleme" as UC1
+    usecase "Demander une collecte" as UC2
+    usecase "Deposer une plainte" as UC3
+    usecase "Consulter le calendrier" as UC4
+    usecase "Voir les campagnes" as UC5
+    usecase "Consulter ses notifications" as UC6
+    usecase "Envoyer des messages" as UC7
+    usecase "Consulter ses itineraires" as UC8
+    usecase "Demarrer une collecte" as UC9
+    usecase "Valider une collecte" as UC10
+    usecase "Signaler un incident" as UC11
+    usecase "Gerer les utilisateurs" as UC12
+    usecase "Traiter les signalements" as UC13
+    usecase "Gerer les plaintes" as UC14
+    usecase "Planifier les itineraires" as UC15
+    usecase "Superviser les operations" as UC16
+    usecase "Creer des campagnes" as UC17
+}
+
+Citoyen --> UC1
+Citoyen --> UC2
+Citoyen --> UC3
+Citoyen --> UC4
+Citoyen --> UC5
+Citoyen --> UC6
+Citoyen --> UC7
+
+Collecteur --> UC8
+Collecteur --> UC9
+Collecteur --> UC10
+Collecteur --> UC11
+Collecteur --> UC5
+Collecteur --> UC6
+Collecteur --> UC7
+
+Admin --> UC12
+Admin --> UC13
+Admin --> UC14
+Admin --> UC15
+Admin --> UC16
+Admin --> UC17
+Admin --> UC6
+Admin --> UC7
+
+UC1 ..> UC13 : depend
+UC2 ..> UC15 : depend
+UC3 ..> UC14 : depend
+UC9 ..> UC16 : depend
+UC11 ..> UC16 : depend
+UC17 ..> UC5 : depend
+
+note top of UC16
+L'administrateur supervise l'ensemble
+des operations du systeme
+end note
+
+note right of UC5
+Les campagnes sont visibles par
+les citoyens et collecteurs
+end note
+
+@enduml

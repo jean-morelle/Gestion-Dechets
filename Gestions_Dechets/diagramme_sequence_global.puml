@@ -1,0 +1,76 @@
+@startuml
+title Diagramme de Sequence Global - Systeme de Gestion des Dechets
+
+actor Citoyen
+actor Collecteur
+actor Administrateur
+participant "Interface Web" as UI
+participant "Controllers" as CTRL
+participant "Base de Donnees" as DB
+participant "Systeme Notifications" as NOTIF
+
+== Scenario: Signalement et Traitement ==
+
+Citoyen -> UI: Signaler probleme
+UI -> CTRL: Enregistrer signalement
+CTRL -> DB: Sauvegarder signalement
+DB --> CTRL: Signalement cree
+CTRL -> NOTIF: Notifier admin
+NOTIF -> Administrateur: Notification nouvelle
+UI --> Citoyen: "Signalement enregistre"
+
+Administrateur -> UI: Consulter signalements
+UI -> CTRL: Lister signalements
+CTRL -> DB: Recuperer signalements
+DB --> CTRL: Liste signalements
+CTRL --> UI: Afficher signalements
+UI --> Administrateur: Liste des signalements
+
+Administrateur -> UI: Traiter signalement
+UI -> CTRL: Mettre a jour statut
+CTRL -> DB: Marquer comme "traite"
+CTRL -> NOTIF: Notifier citoyen
+NOTIF -> Citoyen: Notification traitement
+UI --> Administrateur: "Signalement traite"
+
+== Scenario: Creation Itineraire et Collecte ==
+
+Administrateur -> UI: Creer itineraire
+UI -> CTRL: Enregistrer itineraire
+CTRL -> DB: Sauvegarder itineraire
+CTRL -> NOTIF: Notifier collecteur
+NOTIF -> Collecteur: Notification nouvel itineraire
+UI --> Administrateur: "Itineraire cree"
+
+Collecteur -> UI: Consulter itineraires
+UI -> CTRL: Lister itineraires
+CTRL -> DB: Recuperer itineraires assignes
+DB --> CTRL: Liste itineraires
+CTRL --> UI: Afficher itineraires
+UI --> Collecteur: Liste des itineraires
+
+Collecteur -> UI: Demarrer collecte
+UI -> CTRL: Mettre a jour statut
+CTRL -> DB: Marquer "en_cours"
+CTRL -> NOTIF: Notifier admin
+NOTIF -> Administrateur: Notification collecte demarree
+UI --> Collecteur: "Collecte demarree"
+
+== Scenario: Campagne de Sensibilisation ==
+
+Administrateur -> UI: Creer campagne
+UI -> CTRL: Enregistrer campagne
+CTRL -> DB: Sauvegarder campagne
+CTRL -> NOTIF: Notifier tous les utilisateurs
+NOTIF -> Citoyen: Notification nouvelle campagne
+NOTIF -> Collecteur: Notification nouvelle campagne
+UI --> Administrateur: "Campagne creee"
+
+Citoyen -> UI: Consulter campagnes
+UI -> CTRL: Lister campagnes
+CTRL -> DB: Recuperer campagnes actives
+DB --> CTRL: Liste campagnes
+CTRL --> UI: Afficher campagnes
+UI --> Citoyen: Liste des campagnes
+
+@enduml

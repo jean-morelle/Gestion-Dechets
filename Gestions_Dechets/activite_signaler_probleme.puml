@@ -1,0 +1,77 @@
+@startuml
+title Diagramme d'Activité - Signaler un Problème
+
+start
+
+:Citoyen authentifié;
+:Cliquer sur "Signaler un problème";
+
+:Afficher le formulaire de signalement;
+
+:Sélectionner le type de problème;
+note right
+  - Déchets abandonnés
+  - Conteneur plein
+  - Déversement
+  - Autre
+end note
+
+:Saisir description détaillée du problème;
+
+:Indiquer la localisation;
+
+if (Géolocalisation disponible ?) then (Oui)
+  :Autoriser l'accès à la position;
+  :Remplir automatiquement l'adresse;
+  :Modifier si nécessaire;
+else (Non)
+  :Saisir manuellement l'adresse;
+endif
+
+:Sélectionner le niveau d'urgence;
+note right
+  - Faible
+  - Moyen
+  - Élevé
+end note
+
+:Télécharger des photos du problème;
+if (Photos valides ?) then (Oui)
+  :Photos téléchargées avec succès;
+else (Non)
+  :Afficher erreur de téléchargement;
+  :Continuer sans photos;
+endif
+
+:Ajouter des notes complémentaires;
+
+:Cliquer sur "Envoyer le signalement";
+
+:Système valide les informations;
+
+if (Informations complètes ?) then (Oui)
+  :Enregistrer le signalement;
+  :Générer un numéro de référence;
+  
+  if (Urgence élevée ?) then (Oui)
+    :Envoyer notification SMS à l'administrateur;
+    :Créer alerte prioritaire;
+    :Informer le citoyen du traitement accéléré;
+  else (Non)
+    :Envoyer notification normale à l'administrateur;
+  endif
+  
+  :Afficher message de confirmation;
+  :Attribuer un numéro de suivi;
+  :Envoyer email de confirmation;
+  stop
+else (Non)
+  :Afficher les champs obligatoires manquants;
+  :Compléter les informations manquantes;
+  :Renvoyer le formulaire;
+endif
+
+@enduml
+
+
+

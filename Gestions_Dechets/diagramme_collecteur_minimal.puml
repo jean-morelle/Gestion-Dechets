@@ -1,0 +1,44 @@
+@startuml
+actor Collecteur
+usecase "Consulter itineraires"
+usecase "Demarrer collecte"
+usecase "Valider collecte"
+usecase "Signaler incident"
+usecase "Voir campagnes"
+usecase "Consulter notifications"
+usecase "Envoyer messages"
+
+Collecteur --> "Consulter itineraires"
+Collecteur --> "Demarrer collecte"
+Collecteur --> "Valider collecte"
+Collecteur --> "Signaler incident"
+Collecteur --> "Voir campagnes"
+Collecteur --> "Consulter notifications"
+Collecteur --> "Envoyer messages"
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

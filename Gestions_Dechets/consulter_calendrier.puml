@@ -1,0 +1,83 @@
+@startuml
+title Diagramme de Description Textuelle - Consulter le Calendrier de Collecte
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+database "Base de données" as DB
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur "Calendrier de collecte"
+System -> DB: Récupère les données du calendrier
+DB -> System: Retourne les données de collecte
+System -> Citoyen: Affiche le calendrier du mois en cours
+
+note over Citoyen, System: **Affichage du calendrier**
+System -> Citoyen: Montre les jours de collecte avec codes couleur
+System -> Citoyen: Affiche les types de collecte (ménagers, recyclables, verts)
+
+Citoyen -> System: Navigue entre les mois (précédent/suivant)
+System -> DB: Récupère les données du nouveau mois
+System -> Citoyen: Met à jour l'affichage
+
+Citoyen -> System: Sélectionne une date spécifique
+System -> Citoyen: Affiche les détails (type, horaires, instructions)
+
+Citoyen -> System: Clique sur un jour de collecte
+System -> Citoyen: Affiche les informations complémentaires
+
+Citoyen -> System: Filtre par type de collecte
+System -> System: Applique le filtre
+System -> Citoyen: Met à jour l'affichage selon les filtres
+
+Citoyen -> System: Filtre par zone/quartier
+System -> System: Applique le filtre de zone
+System -> Citoyen: Affiche uniquement les collectes de la zone
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **1a. Accès via notification**
+System -> Citoyen: Envoie notification de changement de calendrier
+Citoyen -> System: Clique sur la notification
+System -> Citoyen: Accède directement au calendrier
+System -> Citoyen: Met en évidence les modifications
+
+note over Citoyen, System: **2a. Calendrier vide**
+System -> DB: Récupère les données
+DB -> System: Aucune donnée pour la période
+System -> Citoyen: Affiche "Aucune collecte planifiée"
+Citoyen -> System: Peut changer de mois ou contacter l'administration
+
+note over Citoyen, System: **3a. Recherche de date spécifique**
+Citoyen -> System: Utilise la fonction de recherche de date
+Citoyen -> System: Saisit une date spécifique
+System -> DB: Récupère les données pour cette date
+System -> Citoyen: Affiche directement le mois et la date
+
+note over Citoyen, System: **4a. Informations détaillées**
+Citoyen -> System: Clique sur "Plus de détails"
+System -> Citoyen: Affiche popup ou nouvelle page
+System -> Citoyen: Informations complètes (horaires, types, zones, contacts)
+
+note over Citoyen, System: **4b. Instructions spéciales**
+System -> System: Détecte instructions spéciales (fêtes, travaux)
+System -> Citoyen: Affiche icône d'alerte
+Citoyen -> System: Clique pour voir les détails
+System -> Citoyen: Affiche les instructions spéciales
+
+note over Citoyen, System: **5a. Filtrage par type de déchets**
+Citoyen -> System: Sélectionne "Déchets ménagers uniquement"
+System -> System: Applique le filtre
+System -> Citoyen: Ne montre que les jours de collecte ménagers
+System -> Citoyen: Grises ou masque les autres types
+
+note over Citoyen, System: **5b. Fonctionnalités additionnelles**
+Citoyen -> System: Demande l'export du calendrier (PDF, image)
+System -> Citoyen: Génère et télécharge le fichier
+Citoyen -> System: Active les notifications des prochaines collectes
+System -> Citoyen: Envoie des rappels automatiques
+
+@enduml
+
+
+

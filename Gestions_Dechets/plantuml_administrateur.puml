@@ -1,0 +1,49 @@
+@startuml Diagramme_Cas_Utilisation_Administrateur
+
+!theme plain
+skinparam actorStyle awesome
+skinparam usecaseStyle rectangle
+
+actor "Administrateur" as Admin #orange
+
+rectangle "Cas d'utilisation - Administrateur" {
+  usecase "Consulter le tableau de bord" as UC28
+  usecase "Gérer les utilisateurs" as UC29
+  usecase "Gérer les signalements" as UC30
+  usecase "Gérer les plaintes" as UC31
+  usecase "Créer un itinéraire" as UC32
+  usecase "Gérer les itinéraires" as UC33
+  usecase "Gérer le calendrier de collecte" as UC34
+  usecase "Superviser les opérations" as UC35
+  usecase "Créer une notification" as UC36
+  usecase "Gérer les campagnes de sensibilisation" as UC37
+  usecase "Gérer les messages" as UC38
+  usecase "Configurer les paramètres système" as UC39
+}
+
+' Relations principales
+Admin --> UC28
+Admin --> UC29
+Admin --> UC30
+Admin --> UC31
+Admin --> UC32
+Admin --> UC33
+Admin --> UC34
+Admin --> UC35
+Admin --> UC36
+Admin --> UC37
+Admin --> UC38
+Admin --> UC39
+
+' Relations d'inclusion
+UC30 ..> UC38 : <<include>>
+UC31 ..> UC38 : <<include>>
+UC35 ..> UC38 : <<include>>
+
+@enduml
+
+
+
+
+
+

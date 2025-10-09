@@ -1,0 +1,78 @@
+@startuml
+!theme plain
+title Diagramme de Séquence - Citoyen Signale un Problème de Déchets
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+
+== Scénario Nominal ==
+
+Citoyen -> System: Accède au tableau de bord
+System -> Citoyen: Affiche le dashboard
+
+Citoyen -> System: Clique sur "Signaler un problème"
+System -> Citoyen: Affiche formulaire de signalement
+
+== Saisie des Informations ==
+
+Citoyen -> System: Sélectionne type de déchet
+note right: dechet_menager, dechet_vert, encombrant,\ndechet_dangereux, dechet_recyclable, autre
+
+Citoyen -> System: Sélectionne niveau d'urgence
+note right: faible, moyenne, elevee, urgente
+
+Citoyen -> System: Saisit description détaillée du problème
+Citoyen -> System: Indique adresse précise
+Citoyen -> System: Spécifie le quartier
+Citoyen -> System: Optionnel: saisit coordonnées GPS
+Citoyen -> System: Optionnel: renseigne téléphone de contact
+Citoyen -> System: Optionnel: télécharge photo du problème
+
+== Soumission du Signalement ==
+
+Citoyen -> System: Clique sur "Envoyer le signalement"
+
+System -> System: Valide les données saisies
+note right: Vérification des champs obligatoires\net formats valides
+
+alt Validation réussie
+    System -> System: Enregistre le signalement
+    System -> System: Génère un numéro de référence unique
+    System -> System: Envoie notifications aux administrateurs
+    
+    System -> Citoyen: Confirme l'enregistrement
+    note right: "Signalement enregistré avec succès !\nNuméro de référence: #12345"
+    
+else Validation échoue
+    System -> Citoyen: Affiche les erreurs de validation
+    note right: "Champs obligatoires manquants\nou format invalide"
+    Citoyen -> System: Corrige les erreurs et renvoie
+end
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: Géolocalisation automatique
+alt Géolocalisation disponible
+    System -> Citoyen: "Autoriser l'accès à votre position ?"
+    Citoyen -> System: Autorise l'accès GPS
+    System -> System: Récupère position automatiquement
+    System -> Citoyen: Adresse pré-remplie automatiquement
+end
+
+note over Citoyen, System: Erreur de téléchargement photo
+alt Erreur upload photo
+    System -> Citoyen: "Erreur lors du téléchargement de la photo"
+    System -> Citoyen: "Continuer sans photo ?"
+    Citoyen -> System: Confirme continuation
+    System -> Citoyen: "Signalement enregistré sans photo"
+end
+
+note over Citoyen, System: Signalement urgent
+alt Signalement urgent (elevee/urgente)
+    System -> System: Traite en priorité absolue
+    System -> System: Envoie notifications immédiates aux admins
+    System -> Citoyen: "Signalement urgent traité en priorité"
+    note right: SMS ou notification push\nselon configuration
+end
+
+@enduml

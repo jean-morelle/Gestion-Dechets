@@ -1,0 +1,57 @@
+@startuml
+title Diagramme de Séquence - Authentification Citoyen
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+
+== Scénario Nominal ==
+
+Citoyen -> System: Accède à la page de connexion
+System -> Citoyen: Affiche le formulaire de connexion
+
+Citoyen -> System: Saisit email et mot de passe
+Citoyen -> System: Clique sur "Se connecter"
+
+System -> System: Vérifie l'existence de l'email
+System -> System: Vérifie le mot de passe
+System -> System: Vérifie le rôle = "citoyen"
+System -> System: Vérifie le statut = "actif"
+
+System -> System: Crée une session utilisateur
+System -> Citoyen: Redirige vers le tableau de bord
+System -> Citoyen: Affiche message de bienvenue
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: Inscription d'un nouveau citoyen
+Citoyen -> System: Clique sur "Créer un compte"
+System -> Citoyen: Affiche le formulaire d'inscription
+Citoyen -> System: Remplit le formulaire
+System -> System: Enregistre le nouveau compte
+System -> Citoyen: Envoie email de confirmation
+
+note over Citoyen, System: Email inexistant
+System -> System: Vérifie l'existence de l'email
+System -> Citoyen: Affiche "Email ou mot de passe incorrect"
+
+note over Citoyen, System: Mot de passe incorrect
+System -> System: Vérifie le mot de passe
+System -> Citoyen: Affiche "Email ou mot de passe incorrect"
+
+note over Citoyen, System: Compte désactivé
+System -> System: Vérifie le statut du compte
+System -> Citoyen: Affiche "Compte désactivé. Contactez l'administrateur."
+
+note over Citoyen, System: **Mot de passe oublié**
+Citoyen -> System: Clique sur "Mot de passe oublié"
+System -> Citoyen: Demande l'email
+Citoyen -> System: Saisit son email
+System -> System: Vérifie l'email
+System -> Citoyen: Envoie email de réinitialisation
+Citoyen -> System: Clique sur le lien dans l'email
+System -> Citoyen: Affiche le formulaire de nouveau mot de passe
+Citoyen -> System: Saisit le nouveau mot de passe
+System -> System: Met à jour le mot de passe
+System -> Citoyen: Confirme la réinitialisation
+
+@enduml

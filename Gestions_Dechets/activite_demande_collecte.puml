@@ -1,0 +1,30 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Demande de Collecte
+
+start
+
+:Remplir le formulaire de demande;
+
+:Sélectionner la date souhaitée;
+
+if (Date disponible ?) then (Oui)
+  :Confirmer la date;
+else (Non)
+  :Choisir une date alternative;
+endif
+
+:Envoyer la demande;
+
+if (Demande valide ?) then (Oui)
+  :Enregistrer la demande;
+  :Générer numéro de référence;
+  :Confirmer l'envoi;
+  stop
+else (Non)
+  :Afficher les erreurs;
+  :Retour au formulaire;
+  stop
+endif
+
+@enduml

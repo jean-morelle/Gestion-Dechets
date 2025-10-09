@@ -1,0 +1,124 @@
+@startuml
+!theme plain
+title Diagramme de Séquence - Collecteur Consulte ses Itinéraires
+
+actor "Collecteur" as Collecteur
+participant "Système" as System
+
+== Accès aux Itinéraires ==
+
+Collecteur -> System: Accède au tableau de bord
+System -> Collecteur: Affiche le dashboard avec statistiques
+
+Collecteur -> System: Clique sur "Mes Itinéraires"
+System -> Collecteur: Affiche la liste des itinéraires
+
+== Consultation de la Liste ==
+
+System -> System: Récupère les itinéraires du collecteur
+note right: Filtrage par collecteur_id\nTri par date de création
+
+System -> Collecteur: Affiche la liste paginée
+note right: Nom, type, statut, dates, heures\nBoutons "Ouvrir" et "Démarrer"
+
+== Filtrage et Recherche ==
+
+alt Filtrage par statut
+    Collecteur -> System: Sélectionne un statut
+    note right: planifie, en_cours, termine, annule
+    System -> System: Filtre les itinéraires par statut
+    System -> Collecteur: Affiche les résultats filtrés
+end
+
+alt Filtrage par type
+    Collecteur -> System: Sélectionne un type
+    note right: regulier, ponctuel, special
+    System -> System: Filtre les itinéraires par type
+    System -> Collecteur: Affiche les résultats filtrés
+end
+
+alt Filtrage par date
+    Collecteur -> System: Sélectionne une date
+    System -> System: Filtre par date de début
+    System -> Collecteur: Affiche les résultats filtrés
+end
+
+== Consultation d'un Itinéraire ==
+
+Collecteur -> System: Clique sur "Ouvrir" un itinéraire
+System -> System: Vérifie les permissions
+note right: collecteur_id === Auth::id()
+
+alt Permissions OK
+    System -> System: Récupère les détails de l'itinéraire
+    System -> System: Récupère les points de collecte ordonnés
+    System -> System: Récupère les collectes associées
+    
+    System -> Collecteur: Affiche les détails complets
+    note right: Informations générales\nPoints de collecte ordonnés\nCollectes avec statuts\nActions disponibles
+    
+else Permissions refusées
+    System -> Collecteur: "Vous n'avez pas accès à cet itinéraire"
+end
+
+== Actions sur l'Itinéraire ==
+
+alt Démarrer l'itinéraire
+    Collecteur -> System: Clique sur "Démarrer"
+    System -> System: Vérifie que l'itinéraire est planifié
+    System -> System: Met à jour le statut à "en_cours"
+    System -> System: Crée les collectes en attente
+    System -> Collecteur: Confirme le démarrage
+    note right: "Itinéraire démarré avec succès"
+end
+
+alt Terminer l'itinéraire
+    Collecteur -> System: Clique sur "Terminer"
+    System -> System: Vérifie que toutes les collectes sont terminées
+    System -> System: Met à jour le statut à "termine"
+    System -> System: Calcule les statistiques finales
+    System -> Collecteur: Confirme la fin
+    note right: "Itinéraire terminé avec succès"
+end
+
+alt Navigation GPS
+    Collecteur -> System: Clique sur "Naviguer vers le prochain point"
+    System -> System: Récupère les coordonnées du prochain point
+    System -> System: Génère le lien Google Maps
+    System -> Collecteur: Ouvre la navigation GPS
+    note right: Redirection vers Google Maps\navec destination pré-remplie
+end
+
+alt Signaler un incident
+    Collecteur -> System: Clique sur "Signaler un incident"
+    System -> Collecteur: Affiche le formulaire d'incident
+    note right: Pré-rempli avec l'itinéraire\nFormulaire de signalement
+end
+
+== Scénarios Alternatifs ==
+
+note over Collecteur, System: Itinéraire déjà démarré
+alt Tentative de démarrage multiple
+    System -> Collecteur: "Itinéraire déjà en cours"
+    System -> Collecteur: Bouton "Démarrer" désactivé
+end
+
+note over Collecteur, System: Collectes non terminées
+alt Tentative de terminaison prématurée
+    System -> Collecteur: "Toutes les collectes doivent être terminées"
+    System -> Collecteur: Bouton "Terminer" désactivé
+end
+
+note over Collecteur, System: Pas de prochain point
+alt Aucun point suivant
+    System -> Collecteur: "Aucun point de collecte suivant"
+    System -> Collecteur: Bouton navigation masqué
+end
+
+note over Collecteur, System: Aucun itinéraire
+alt Liste vide
+    System -> Collecteur: "Aucun itinéraire assigné"
+    System -> Collecteur: Message d'information
+end
+
+@enduml

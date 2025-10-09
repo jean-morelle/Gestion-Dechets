@@ -1,0 +1,76 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Authentification Citoyen
+
+start
+
+:Accès à la page de connexion;
+
+if (Utilisateur existant ?) then (Oui)
+  :Saisir email et mot de passe;
+  :Cliquer sur "Se connecter";
+  
+  :Système vérifie l'email;
+  if (Email existe ?) then (Oui)
+    :Système vérifie le mot de passe;
+    if (Mot de passe correct ?) then (Oui)
+      :Système vérifie le rôle = "citoyen";
+      if (Rôle correct ?) then (Oui)
+        :Système vérifie le statut = "actif";
+        if (Compte actif ?) then (Oui)
+          :Créer une session utilisateur;
+          :Rediriger vers le tableau de bord;
+          :Afficher message de bienvenue;
+          stop
+        else (Non)
+          :Afficher "Compte désactivé";
+          stop
+        endif
+      else (Non)
+        :Afficher "Accès refusé";
+        stop
+      endif
+    else (Non)
+      :Afficher "Email ou mot de passe incorrect";
+      stop
+    endif
+  else (Non)
+    :Afficher "Email ou mot de passe incorrect";
+    stop
+  endif
+  
+elseif (Nouveau utilisateur) then (Oui)
+  :Cliquer sur "Créer un compte";
+  :Remplir le formulaire d'inscription;
+  note right
+    - Nom
+    - Email
+    - Mot de passe
+    - Téléphone
+    - Adresse
+  end note
+  :Système enregistre le compte;
+  :Envoyer email de confirmation;
+  :Confirmer l'inscription par email;
+  :Retour à la connexion;
+  
+elseif (Mot de passe oublié) then (Oui)
+  :Cliquer sur "Mot de passe oublié";
+  :Saisir l'email;
+  :Système vérifie l'email;
+  :Envoyer email de réinitialisation;
+  :Cliquer sur le lien dans l'email;
+  :Saisir le nouveau mot de passe;
+  :Confirmer la réinitialisation;
+  :Retour à la connexion;
+  
+else (Connexion Google)
+  :Cliquer sur "Se connecter avec Google";
+  :Redirection vers Google OAuth;
+  :Traiter la réponse Google;
+  :Enregistrer ou mettre à jour le compte;
+  :Connexion automatique réussie;
+  stop
+endif
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml
+title Diagramme de Cas d'Utilisation - Collecteur
+
+actor Collecteur
+
+package "Systeme de Gestion des Dechets" {
+    usecase "Consulter ses itineraires" as UC1
+    usecase "Demarrer une collecte" as UC2
+    usecase "Valider une collecte" as UC3
+    usecase "Mettre a jour une collecte" as UC4
+    usecase "Signaler un incident" as UC5
+    usecase "Voir les campagnes" as UC6
+    usecase "Consulter ses notifications" as UC7
+    usecase "Envoyer des messages" as UC8
+    usecase "Consulter son profil" as UC9
+    usecase "Modifier ses parametres" as UC10
+}
+
+Collecteur --> UC1
+Collecteur --> UC2
+Collecteur --> UC3
+Collecteur --> UC4
+Collecteur --> UC5
+Collecteur --> UC6
+Collecteur --> UC7
+Collecteur --> UC8
+Collecteur --> UC9
+Collecteur --> UC10
+
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

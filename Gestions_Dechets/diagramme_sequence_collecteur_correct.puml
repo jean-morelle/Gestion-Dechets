@@ -1,0 +1,50 @@
+@startuml
+title Diagramme de Sequence - Collecteur
+
+actor Collecteur
+participant "Interface" as UI
+participant "Controller" as CTRL
+participant "Base de Donnees" as DB
+
+== Demarrage d'une collecte ==
+Collecteur -> UI: 1. Clique "Mes Collectes"
+UI -> CTRL: 2. GET /collecteur/collectes
+CTRL -> DB: 3. SELECT collectes
+DB -> CTRL: 4. Liste collectes
+CTRL -> UI: 5. Vue collectes
+UI -> Collecteur: 6. Liste affichee
+
+Collecteur -> UI: 7. Clique "Demarrer"
+UI -> CTRL: 8. POST /collecteur/collectes/{id}/start
+CTRL -> DB: 9. UPDATE statut = 'en_cours'
+DB -> CTRL: 10. Confirmation
+CTRL -> UI: 11. Redirection
+UI -> Collecteur: 12. "Collecte demarree"
+
+== Validation d'une collecte ==
+Collecteur -> UI: 13. Clique "Valider"
+UI -> CTRL: 14. GET /collecteur/collectes/{id}/validate
+CTRL -> UI: 15. Formulaire validation
+UI -> Collecteur: 16. Formulaire affiche
+
+Collecteur -> UI: 17. Upload photo + quantite
+UI -> CTRL: 18. POST /collecteur/collectes/{id}/validate
+CTRL -> DB: 19. UPDATE collecte + photo
+DB -> CTRL: 20. Confirmation
+CTRL -> UI: 21. Redirection
+UI -> Collecteur: 22. "Collecte validee"
+
+== Signalement d'incident ==
+Collecteur -> UI: 23. Clique "Signaler Incident"
+UI -> CTRL: 24. GET /collecteur/incidents/create
+CTRL -> UI: 25. Formulaire incident
+UI -> Collecteur: 26. Formulaire affiche
+
+Collecteur -> UI: 27. Remplit + soumet
+UI -> CTRL: 28. POST /collecteur/incidents
+CTRL -> DB: 29. INSERT incident
+DB -> CTRL: 30. Confirmation
+CTRL -> UI: 31. Redirection
+UI -> Collecteur: 32. "Incident signale"
+
+@enduml

@@ -1,0 +1,52 @@
+@startuml
+title Diagramme de Cas d'Utilisation - Collecteur
+
+actor Collecteur
+
+usecase ConsulterDashboard
+usecase ConsulterItineraires
+usecase AfficherItineraire
+usecase DemarrerItineraire
+usecase TerminerItineraire
+usecase ConsulterCollectes
+usecase AfficherCollecte
+usecase DemarrerCollecte
+usecase ValiderCollecte
+usecase MettreAJourCollecte
+usecase SignalerIncident
+usecase ConsulterIncidents
+usecase VoirCampagnes
+usecase AfficherCampagne
+usecase ConsulterNotifications
+usecase EnvoyerMessages
+usecase ConsulterProfil
+usecase ModifierParametres
+
+Collecteur --> ConsulterDashboard
+Collecteur --> ConsulterItineraires
+Collecteur --> AfficherItineraire
+Collecteur --> DemarrerItineraire
+Collecteur --> TerminerItineraire
+Collecteur --> ConsulterCollectes
+Collecteur --> AfficherCollecte
+Collecteur --> DemarrerCollecte
+Collecteur --> ValiderCollecte
+Collecteur --> MettreAJourCollecte
+Collecteur --> SignalerIncident
+Collecteur --> ConsulterIncidents
+Collecteur --> VoirCampagnes
+Collecteur --> AfficherCampagne
+Collecteur --> ConsulterNotifications
+Collecteur --> EnvoyerMessages
+Collecteur --> ConsulterProfil
+Collecteur --> ModifierParametres
+
+AfficherItineraire --> ConsulterItineraires
+TerminerItineraire --> DemarrerItineraire
+AfficherCollecte --> ConsulterCollectes
+ValiderCollecte --> DemarrerCollecte
+MettreAJourCollecte --> DemarrerCollecte
+ConsulterIncidents --> SignalerIncident
+AfficherCampagne --> VoirCampagnes
+
+@enduml

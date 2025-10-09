@@ -1,0 +1,246 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Collecteur Consulte ses Itinéraires
+
+start
+
+:Collecteur authentifié;
+:Accéder au tableau de bord;
+:Afficher les statistiques;
+
+:Cliquer sur "Mes Itinéraires";
+:Récupérer les itinéraires du collecteur;
+:Afficher la liste des itinéraires;
+
+' Affichage des itinéraires
+note right
+  **Informations affichées:**
+  - Nom de l'itinéraire
+  - Type (quotidien, hebdomadaire, etc.)
+  - Statut (planifié, en cours, terminé)
+  - Dates de début et fin
+  - Heures de début et fin
+  - Boutons d'action
+end note
+
+if (Filtrage souhaité ?) then (Oui)
+  :Sélectionner un filtre;
+  
+  if (Filtre par statut ?) then (Oui)
+    :Choisir un statut;
+    note right
+      - Planifié
+      - En cours
+      - Terminé
+      - Annulé
+    end note
+  endif
+  
+  if (Filtre par type ?) then (Oui)
+    :Choisir un type;
+    note right
+      - Quotidien
+      - Hebdomadaire
+      - Mensuel
+      - Ponctuel
+    end note
+  endif
+  
+  if (Filtre par date ?) then (Oui)
+    :Sélectionner une date;
+  endif
+  
+  :Appliquer les filtres;
+  :Afficher les résultats filtrés;
+else (Non)
+  :Afficher tous les itinéraires;
+endif
+
+' Consultation d'un itinéraire
+if (Consulter un itinéraire ?) then (Oui)
+  :Cliquer sur "Ouvrir" un itinéraire;
+  :Vérifier les permissions;
+  
+  if (Permissions OK ?) then (Oui)
+    :Récupérer les détails de l'itinéraire;
+    :Récupérer les points de collecte;
+    :Récupérer les collectes associées;
+    :Calculer la progression;
+    
+    :Afficher les détails complets;
+    note right
+      **Détails affichés:**
+      - Informations générales
+      - Points de collecte ordonnés
+      - Collectes avec statuts
+      - Progression en pourcentage
+      - Actions disponibles
+    end note
+    
+    ' Actions sur l'itinéraire
+    if (Action sur l'itinéraire ?) then (Oui)
+      
+      if (Démarrer l'itinéraire ?) then (Oui)
+        :Cliquer sur "Démarrer";
+        :Vérifier que l'itinéraire est planifié;
+        
+        if (Itinéraire planifié ?) then (Oui)
+          :Mettre à jour le statut à "en_cours";
+          :Créer les collectes en attente;
+          :Confirmer le démarrage;
+          :Afficher "Itinéraire démarré";
+        else (Non)
+          :Afficher "Itinéraire déjà en cours";
+        endif
+      endif
+      
+      if (Terminer l'itinéraire ?) then (Oui)
+        :Cliquer sur "Terminer";
+        :Vérifier que toutes les collectes sont terminées;
+        
+        if (Toutes collectes terminées ?) then (Oui)
+          :Mettre à jour le statut à "terminé";
+          :Calculer les statistiques finales;
+          :Confirmer la fin;
+          :Afficher "Itinéraire terminé";
+        else (Non)
+          :Afficher "Toutes les collectes doivent être terminées";
+        endif
+      endif
+      
+      if (Navigation GPS ?) then (Oui)
+        :Cliquer sur "Naviguer vers le prochain point";
+        :Récupérer les coordonnées du prochain point;
+        
+        if (Prochain point disponible ?) then (Oui)
+          :Générer le lien Google Maps;
+          :Ouvrir la navigation GPS;
+          :Afficher l'itinéraire sur la carte;
+        else (Non)
+          :Afficher "Aucun point de collecte suivant";
+        endif
+      endif
+      
+      if (Signaler un incident ?) then (Oui)
+        :Cliquer sur "Signaler un incident";
+        :Afficher le formulaire d'incident;
+        :Pré-remplir avec l'itinéraire;
+        :Permettre la saisie des détails;
+      endif
+      
+    else (Non)
+      :Continuer la consultation;
+    endif
+    
+  else (Non)
+    :Afficher "Accès refusé";
+    :Rediriger vers la liste;
+  endif
+  
+else (Non)
+  :Rester sur la liste;
+endif
+
+' Gestion des états
+if (Itinéraire en cours ?) then (Oui)
+  :Afficher les informations en temps réel;
+  :Mettre à jour la progression;
+  :Afficher le prochain point;
+  :Proposer les actions disponibles;
+endif
+
+if (Itinéraire terminé ?) then (Oui)
+  :Afficher les statistiques finales;
+  :Afficher le résumé des collectes;
+  :Proposer la consultation des détails;
+endif
+
+' Recherche et tri
+if (Recherche souhaitée ?) then (Oui)
+  :Saisir un terme de recherche;
+  :Filtrer par nom d'itinéraire;
+  :Afficher les résultats;
+endif
+
+if (Tri souhaité ?) then (Oui)
+  :Choisir le critère de tri;
+  note right
+    - Date de création
+    - Date de début
+    - Statut
+    - Type
+  end note
+  :Appliquer le tri;
+  :Afficher les résultats triés;
+endif
+
+' Gestion des erreurs
+if (Erreur système ?) then (Oui)
+  :Afficher message d'erreur;
+  :Proposer de réessayer;
+  :Sauvegarder l'état actuel;
+endif
+
+' Synchronisation
+if (Synchronisation nécessaire ?) then (Oui)
+  :Vérifier les mises à jour;
+  :Télécharger les nouveaux itinéraires;
+  :Mettre à jour les statuts;
+  :Afficher les modifications;
+endif
+
+' Notifications
+if (Nouvelles notifications ?) then (Oui)
+  :Afficher les notifications;
+  :Proposer de les consulter;
+  :Marquer comme lues;
+endif
+
+:Retourner à la liste des itinéraires;
+stop
+
+' Notes explicatives
+note over :Récupérer les itinéraires du collecteur;
+  **Critères de récupération:**
+  - collecteur_id = Auth::id()
+  - Tri par date de création
+  - Pagination des résultats
+end note
+
+note over :Calculer la progression;
+  **Calcul de progression:**
+  - Total des points de collecte
+  - Nombre de collectes terminées
+  - Pourcentage de completion
+end note
+
+note over :Créer les collectes en attente;
+  **Création automatique:**
+  - Une collecte par point de l'itinéraire
+  - Statut initial "en_attente"
+  - Ordre respecté selon l'itinéraire
+end note
+
+note over :Générer le lien Google Maps;
+  **Navigation GPS:**
+  - Coordonnées du point de collecte
+  - Mode de transport (voiture)
+  - Redirection vers Google Maps
+end note
+
+' Exceptions et cas spéciaux
+note over :Vérifier les permissions;
+  **Vérifications:**
+  - collecteur_id === Auth::id()
+  - Itinéraire non supprimé
+  - Accès autorisé
+end note
+
+note over :Afficher "Accès refusé";
+  **Cas d'erreur:**
+  - Itinéraire d'un autre collecteur
+  - Itinéraire supprimé
+  - Permissions insuffisantes
+end note
+
+@enduml

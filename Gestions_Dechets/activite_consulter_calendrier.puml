@@ -1,0 +1,90 @@
+@startuml
+title Diagramme d'Activité - Consulter le Calendrier de Collecte
+
+start
+
+:Citoyen authentifié;
+:Cliquer sur "Calendrier de collecte";
+
+:Récupérer les données du calendrier;
+:Afficher le calendrier du mois en cours;
+
+note right
+  - Jours de collecte avec codes couleur
+  - Types de collecte (ménagers, recyclables, verts)
+  - Statut (actif, terminé, à venir)
+end note
+
+repeat
+  :Naviguer dans le calendrier;
+  
+  if (Navigation souhaitée ?) then (Mois précédent)
+    :Cliquer sur "Mois précédent";
+    :Récupérer les données du mois précédent;
+    :Mettre à jour l'affichage;
+  elseif (Mois suivant) then (Mois suivant)
+    :Cliquer sur "Mois suivant";
+    :Récupérer les données du mois suivant;
+    :Mettre à jour l'affichage;
+  elseif (Date spécifique) then (Date spécifique)
+    :Utiliser la fonction de recherche de date;
+    :Saisir une date spécifique;
+    :Récupérer les données pour cette date;
+    :Afficher directement le mois et la date;
+  elseif (Sélection jour) then (Sélection jour)
+    :Cliquer sur un jour de collecte;
+    :Afficher les détails (type, horaires, instructions);
+    
+    if (Plus de détails ?) then (Oui)
+      :Cliquer sur "Plus de détails";
+      :Afficher popup ou nouvelle page;
+      :Informations complètes (horaires, types, zones, contacts);
+    endif
+    
+    if (Instructions spéciales ?) then (Oui)
+      :Afficher icône d'alerte;
+      :Cliquer pour voir les détails;
+      :Afficher les instructions spéciales;
+    endif
+  endif
+  
+  if (Filtrage souhaité ?) then (Oui)
+    if (Filtre par type) then (Type de déchets)
+      :Sélectionner type (ex: "Déchets ménagers uniquement");
+      :Appliquer le filtre;
+      :Ne montrer que les jours de collecte correspondants;
+      :Griser ou masquer les autres types;
+    elseif (Filtre par zone) then (Zone/quartier)
+      :Sélectionner zone/quartier;
+      :Appliquer le filtre de zone;
+      :Afficher uniquement les collectes de la zone;
+    endif
+  endif
+  
+  if (Fonctionnalités additionnelles ?) then (Oui)
+    if (Export calendrier) then (Export)
+      :Demander l'export du calendrier (PDF, image);
+      :Générer et télécharger le fichier;
+    elseif (Notifications) then (Notifications)
+      :Activer les notifications des prochaines collectes;
+      :Configurer les rappels automatiques;
+    endif
+  endif
+
+repeat while (Continuer à consulter ?) is (Oui)
+-> Non;
+
+if (Calendrier vide pour période ?) then (Oui)
+  :Afficher "Aucune collecte planifiée";
+  :Proposer de changer de mois;
+  :Proposer de contacter l'administration;
+else (Non)
+  :Continuer la consultation normale;
+endif
+
+stop
+
+@enduml
+
+
+

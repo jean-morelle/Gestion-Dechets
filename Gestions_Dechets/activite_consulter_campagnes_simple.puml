@@ -1,0 +1,123 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Consulter les Campagnes de Sensibilisation
+
+start
+
+:Citoyen authentifié;
+:Cliquer sur "Campagnes";
+
+:Récupérer les campagnes actives;
+:Afficher la liste des campagnes;
+
+if (Campagnes disponibles ?) then (Oui)
+  repeat
+    :Naviguer dans les campagnes;
+    
+    if (Action sur campagne ?) then (Filtrage)
+      if (Filtre par type) then (Oui)
+        :Filtrer par type de campagne;
+        :Appliquer le filtre;
+        :Mettre à jour l'affichage selon le filtre;
+      elseif (Filtre par statut) then (Oui)
+        :Filtrer par statut (active, terminée, à venir);
+        :Appliquer le filtre;
+        :Mettre à jour l'affichage;
+      endif
+      
+      if (Combiner plusieurs filtres ?) then (Oui)
+        :Combiner plusieurs filtres;
+        :Appliquer les filtres combinés;
+      endif
+      
+    elseif (Recherche) then (Oui)
+      :Utiliser la fonction de recherche;
+      :Saisir des mots-clés;
+      :Rechercher dans les titres et descriptions;
+      :Afficher les campagnes correspondantes;
+      
+    elseif (Consultation campagne) then (Oui)
+      :Cliquer sur une campagne intéressante;
+      :Récupérer les détails de la campagne;
+      :Afficher les détails complets;
+      
+      if (Contenu multimédia ?) then (Oui)
+        :Détecter contenu multimédia (vidéos, images, infographies);
+        :Afficher les options de visionnement/téléchargement;
+        :Visionner ou télécharger le contenu;
+        :Adapter l'affichage selon le type de média;
+      endif
+      
+      if (Campagne interactive ?) then (Oui)
+        :Détecter quiz, sondages, défis;
+        :Proposer la participation;
+        :Participer directement;
+        :Enregistrer les réponses;
+        :Fournir score et commentaires;
+      endif
+      
+      if (Télécharger ressources ?) then (Oui)
+        :Télécharger guides PDF, brochures;
+        :Vérifier l'espace de stockage;
+        :Comptabiliser les téléchargements;
+      endif
+      
+      if (Partager campagne ?) then (Oui)
+        :Cliquer sur "Partager";
+        :Ouvrir les options de partage;
+        :Générer un lien personnalisé;
+      endif
+      
+      if (Campagne avec récompenses ?) then (Oui)
+        :Détecter campagne avec récompenses;
+        :Afficher les points, badges, ou prix disponibles;
+        :Participer et gagner des récompenses;
+        :Enregistrer les récompenses;
+        :Afficher le classement et les récompenses;
+      endif
+      
+      if (Campagne avec événements ?) then (Oui)
+        :Détecter événements (ateliers, conférences);
+        :Afficher les événements disponibles;
+        :S'inscrire aux événements;
+        :Gérer les inscriptions;
+        :Envoyer des rappels pour les événements;
+      endif
+      
+      if (Marquer intérêt/participation ?) then (Oui)
+        :Marquer son intérêt ou sa participation;
+        :Enregistrer l'engagement du citoyen;
+        :Confirmer l'enregistrement;
+      endif
+    endif
+    
+    if (Fonctionnalités additionnelles ?) then (Oui)
+      if (Système points/badges) then (Oui)
+        :Activer le système de points et badges;
+        :Enregistrer les points et badges;
+      elseif (Classement) then (Oui)
+        :Consulter le classement des participants;
+        :Afficher le classement;
+      elseif (Recommandations) then (Oui)
+        :Afficher les recommandations personnalisées;
+      elseif (Notifications) then (Oui)
+        :Activer les notifications des nouvelles campagnes;
+        :Envoyer notifications des nouvelles campagnes;
+      endif
+    endif
+    
+  repeat while (Continuer à consulter ?) is (Oui)
+  -> Non;
+  
+else (Non - Aucune campagne)
+  :Afficher "Aucune campagne en cours";
+  :Afficher message encourageant;
+  :Permettre de consulter les campagnes passées;
+endif
+
+stop
+
+@enduml
+
+
+

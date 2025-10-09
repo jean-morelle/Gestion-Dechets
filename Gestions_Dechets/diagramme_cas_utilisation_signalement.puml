@@ -1,0 +1,176 @@
+@startuml
+!theme plain
+title Diagramme de Cas d'Utilisation - Citoyen Signale un Problème de Déchets
+
+left to right direction
+
+' Acteurs
+actor "Citoyen" as Citoyen
+actor "Administrateur" as Admin
+actor "Collecteur" as Collecteur
+actor "Système GPS" as GPS
+
+' Système principal
+rectangle "Système de Gestion des Déchets" {
+  
+  ' Cas d'utilisation principal
+  usecase "Signaler un problème de déchets" as UC1
+  
+  ' Cas d'utilisation inclus
+  usecase "S'authentifier" as UC2
+  usecase "Valider les données" as UC3
+  usecase "Enregistrer le signalement" as UC4
+  
+  ' Cas d'utilisation étendus
+  usecase "Utiliser la géolocalisation" as UC5
+  usecase "Télécharger une photo" as UC6
+  usecase "Envoyer notification" as UC7
+  
+  ' Cas d'utilisation spécialisés
+  usecase "Signaler déchets abandonnés" as UC8
+  usecase "Signaler conteneur plein" as UC9
+  usecase "Signaler déversement" as UC10
+  usecase "Signaler autre problème" as UC11
+  
+  ' Cas d'utilisation de gestion
+  usecase "Consulter ses signalements" as UC12
+  usecase "Modifier un signalement" as UC13
+  usecase "Annuler un signalement" as UC14
+  
+  ' Cas d'utilisation de notification
+  usecase "Recevoir confirmation" as UC15
+  usecase "Recevoir mise à jour" as UC16
+}
+
+' Relations principales
+Citoyen --> UC1 : "souhaite signaler"
+Citoyen --> UC12 : "consulte l'historique"
+Citoyen --> UC13 : "modifie si nécessaire"
+Citoyen --> UC14 : "annule si erreur"
+
+' Relations d'inclusion
+UC1 .> UC2 : <<include>>
+UC1 .> UC3 : <<include>>
+UC1 .> UC4 : <<include>>
+
+' Relations d'extension
+UC1 .> UC5 : <<extend>> "si GPS disponible"
+UC1 .> UC6 : <<extend>> "si photo disponible"
+UC1 .> UC7 : <<extend>> "après enregistrement"
+
+' Spécialisations du cas principal
+UC1 <|-- UC8 : "déchets abandonnés"
+UC1 <|-- UC9 : "conteneur plein"
+UC1 <|-- UC10 : "déversement"
+UC1 <|-- UC11 : "autre problème"
+
+' Relations avec les acteurs secondaires
+Admin --> UC7 : "reçoit notification"
+Collecteur --> UC7 : "reçoit notification"
+GPS --> UC5 : "fournit position"
+
+' Relations de notification
+UC1 --> UC15 : "confirme l'envoi"
+UC1 --> UC16 : "informe du suivi"
+
+' Notes explicatives
+note right of UC1
+  **Cas d'utilisation principal**
+  Le citoyen signale un problème
+  de déchets observé dans sa zone
+  en fournissant les détails
+  nécessaires
+end note
+
+note right of UC5
+  **Extension optionnelle**
+  Utilisation de la géolocalisation
+  pour remplir automatiquement
+  l'adresse du problème
+end note
+
+note right of UC6
+  **Extension optionnelle**
+  Ajout d'une photo comme preuve
+  visuelle du problème signalé
+end note
+
+note right of UC7
+  **Extension automatique**
+  Notification automatique aux
+  administrateurs et collecteurs
+  après enregistrement
+end note
+
+note left of UC8
+  **Spécialisation**
+  Signalement de déchets
+  abandonnés dans l'espace public
+end note
+
+note left of UC9
+  **Spécialisation**
+  Signalement de conteneurs
+  de collecte pleins ou défaillants
+end note
+
+note left of UC10
+  **Spécialisation**
+  Signalement de déversements
+  ou fuites de déchets
+end note
+
+note left of UC11
+  **Spécialisation**
+  Autres types de problèmes
+  liés aux déchets non listés
+end note
+
+note bottom of UC12
+  **Gestion**
+  Consultation de l'historique
+  des signalements effectués
+end note
+
+note bottom of UC13
+  **Gestion**
+  Modification d'un signalement
+  avant traitement par l'admin
+end note
+
+note bottom of UC14
+  **Gestion**
+  Annulation d'un signalement
+  en cas d'erreur ou de doublon
+end note
+
+' Préconditions et post-conditions
+note top of UC1
+  **Préconditions:**
+  - Citoyen authentifié
+  - Accès à l'interface de signalement
+  - Problème observé dans la zone
+  
+  **Post-conditions:**
+  - Signalement enregistré
+  - Numéro de référence généré
+  - Notifications envoyées
+end note
+
+' Flux alternatifs
+note right of UC3
+  **Flux alternatifs:**
+  - Validation échoue → affichage erreurs
+  - Données incomplètes → demande complément
+  - Format invalide → correction requise
+end note
+
+' Exceptions
+note left of UC4
+  **Exceptions:**
+  - Erreur base de données
+  - Problème de sauvegarde photo
+  - Échec envoi notification
+end note
+
+@enduml

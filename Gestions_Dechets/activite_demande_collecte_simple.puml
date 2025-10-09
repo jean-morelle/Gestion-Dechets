@@ -1,0 +1,98 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Faire une Demande de Collecte
+
+start
+
+:Citoyen authentifié;
+:Cliquer sur "Demande de collecte";
+:Afficher le formulaire de demande;
+
+:Sélectionner le type de déchets;
+:Indiquer la quantité estimée;
+:Sélectionner l'unité de mesure;
+:Décrire les déchets à collecter;
+:Indiquer la localisation précise;
+:Sélectionner la date souhaitée;
+:Préciser la plage horaire préférée;
+
+if (Géolocalisation disponible ?) then (Oui)
+  :Autoriser l'accès à la position;
+  :Remplir automatiquement l'adresse;
+  :Modifier si nécessaire;
+else (Non)
+  :Saisir manuellement la localisation;
+endif
+
+if (Collecte urgente ?) then (Oui)
+  :Sélectionner "Urgente";
+  :Proposer des créneaux prioritaires;
+  :Informer des frais supplémentaires possibles;
+  :Confirmer ou annuler;
+else (Non)
+  :Continuer avec la demande normale;
+endif
+
+if (Instructions d'accès spéciales ?) then (Oui)
+  :Indiquer "Accès difficile";
+  :Demander des détails supplémentaires;
+  :Fournir les détails;
+  :Informer des frais supplémentaires possibles;
+else (Non)
+  :Continuer avec la demande normale;
+endif
+
+:Télécharger des photos des déchets;
+:Ajouter des instructions spéciales;
+:Indiquer les coordonnées de contact;
+
+:Vérifier la disponibilité pour la date;
+
+if (Date disponible ?) then (Oui)
+  :Continuer avec la demande;
+else (Non)
+  :Proposer des dates alternatives;
+  :Choisir une autre date;
+  :Afficher les prochaines disponibilités;
+endif
+
+if (Demande en dehors des heures ?) then (Oui)
+  :Informer que la demande sera traitée le prochain jour ouvré;
+  :Envoyer accusé de réception automatique;
+  :Mettre la demande en file d'attente;
+else (Non)
+  :Continuer avec le traitement normal;
+endif
+
+:Cliquer sur "Soumettre la demande";
+
+:Système valide les informations;
+
+if (Informations complètes ?) then (Oui)
+  :Vérifier les demandes similaires récentes;
+  
+  if (Demande similaire trouvée ?) then (Oui)
+    :Proposer de consulter la demande existante;
+    :Confirmer ou modifier la demande;
+  else (Non)
+    :Continuer avec l'enregistrement;
+  endif
+  
+  :Enregistrer la demande;
+  :Générer un numéro de référence;
+  
+  :Envoyer notification à l'administrateur;
+  :Afficher message de confirmation;
+  :Attribuer un numéro de suivi;
+  :Envoyer email de confirmation;
+  
+  :Administrateur planifie la collecte;
+  :Assigner la collecte au collecteur;
+  stop
+else (Non)
+  :Afficher les champs obligatoires manquants;
+  :Compléter les informations manquantes;
+  :Renvoyer le formulaire;
+endif
+
+@enduml

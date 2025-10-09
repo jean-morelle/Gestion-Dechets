@@ -1,0 +1,15 @@
+@startuml
+title Diagramme de Séquence - Demande de Collecte
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+
+== Scénario Nominal ==
+
+Citoyen -> System: Remplit le formulaire de demande
+System -> System: Vérifie la disponibilité
+Citoyen -> System: Confirme la demande
+System -> System: Enregistre la demande
+System -> Citoyen: Confirme l'envoi
+
+@enduml

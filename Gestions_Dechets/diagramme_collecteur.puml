@@ -1,0 +1,66 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam actorStyle awesome
+
+title Diagramme de Cas d'Utilisation - Collecteur
+
+actor "Collecteur" as Collecteur
+
+package "Systeme de Gestion des Dechets" {
+    usecase "Consulter ses itineraires" as UC1
+    usecase "Demarrer une collecte" as UC2
+    usecase "Valider une collecte" as UC3
+    usecase "Mettre a jour une collecte" as UC4
+    usecase "Signaler un incident" as UC5
+    usecase "Voir les campagnes" as UC6
+    usecase "Consulter ses notifications" as UC7
+    usecase "Envoyer des messages" as UC8
+    usecase "Consulter son profil" as UC9
+    usecase "Modifier ses parametres" as UC10
+}
+
+Collecteur --> UC1
+Collecteur --> UC2
+Collecteur --> UC3
+Collecteur --> UC4
+Collecteur --> UC5
+Collecteur --> UC6
+Collecteur --> UC7
+Collecteur --> UC8
+Collecteur --> UC9
+Collecteur --> UC10
+
+UC2 ..> UC7 : include
+UC3 ..> UC7 : include
+UC4 ..> UC7 : include
+UC5 ..> UC7 : include
+
+UC6 ..> UC7 : extend
+UC8 ..> UC7 : extend
+
+UC2 ..> UC1 : depend
+UC3 ..> UC2 : depend
+UC4 ..> UC2 : depend
+
+note right of UC1
+Le collecteur consulte ses itineraires
+assignes pour la journee
+end note
+
+note right of UC2
+Le collecteur demarre une collecte
+avec geolocalisation
+end note
+
+note right of UC3
+Le collecteur valide une collecte
+avec photo et quantite
+end note
+
+note right of UC5
+Le collecteur signale des incidents
+pendant sa tournee
+end note
+
+@enduml

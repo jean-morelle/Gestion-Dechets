@@ -1,0 +1,74 @@
+@startuml
+actor Citoyen
+actor Collecteur
+actor Administrateur
+
+usecase SignalerProbleme
+usecase DemanderCollecte
+usecase DeposerPlainte
+usecase ConsulterCalendrier
+usecase VoirCampagnes
+usecase ConsulterNotifications
+usecase EnvoyerMessages
+usecase ConsulterItineraires
+usecase DemarrerCollecte
+usecase ValiderCollecte
+usecase SignalerIncident
+usecase GererUtilisateurs
+usecase TraiterSignalements
+usecase GererPlaintes
+usecase PlanifierItineraires
+usecase SuperviserOperations
+usecase CreerCampagnes
+
+Citoyen --> SignalerProbleme
+Citoyen --> DemanderCollecte
+Citoyen --> DeposerPlainte
+Citoyen --> ConsulterCalendrier
+Citoyen --> VoirCampagnes
+Citoyen --> ConsulterNotifications
+Citoyen --> EnvoyerMessages
+
+Collecteur --> ConsulterItineraires
+Collecteur --> DemarrerCollecte
+Collecteur --> ValiderCollecte
+Collecteur --> SignalerIncident
+Collecteur --> VoirCampagnes
+Collecteur --> ConsulterNotifications
+Collecteur --> EnvoyerMessages
+
+Administrateur --> GererUtilisateurs
+Administrateur --> TraiterSignalements
+Administrateur --> GererPlaintes
+Administrateur --> PlanifierItineraires
+Administrateur --> SuperviserOperations
+Administrateur --> CreerCampagnes
+Administrateur --> ConsulterNotifications
+Administrateur --> EnvoyerMessages
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

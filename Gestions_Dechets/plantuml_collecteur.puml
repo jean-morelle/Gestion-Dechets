@@ -1,0 +1,52 @@
+@startuml Diagramme_Cas_Utilisation_Collecteur
+
+!theme plain
+skinparam actorStyle awesome
+skinparam usecaseStyle rectangle
+
+actor "Collecteur" as Collecteur #lightgreen
+
+rectangle "Cas d'utilisation - Collecteur" {
+  usecase "Consulter le tableau de bord" as UC15
+  usecase "Consulter ses itinéraires" as UC16
+  usecase "Consulter un itinéraire détaillé" as UC17
+  usecase "Démarrer un itinéraire" as UC18
+  usecase "Gérer les collectes" as UC19
+  usecase "Démarrer une collecte" as UC20
+  usecase "Valider une collecte" as UC21
+  usecase "Signaler un incident" as UC22
+  usecase "Consulter ses incidents" as UC23
+  usecase "Terminer un itinéraire" as UC24
+  usecase "Consulter les campagnes de sensibilisation" as UC25
+  usecase "Gérer ses notifications" as UC26
+  usecase "Envoyer un message" as UC27
+}
+
+' Relations principales
+Collecteur --> UC15
+Collecteur --> UC16
+Collecteur --> UC17
+Collecteur --> UC18
+Collecteur --> UC19
+Collecteur --> UC20
+Collecteur --> UC21
+Collecteur --> UC22
+Collecteur --> UC23
+Collecteur --> UC24
+Collecteur --> UC25
+Collecteur --> UC26
+Collecteur --> UC27
+
+' Relations d'inclusion
+UC18 ..> UC17 : <<include>>
+UC20 ..> UC17 : <<include>>
+UC21 ..> UC17 : <<include>>
+UC22 ..> UC27 : <<include>>
+
+@enduml
+
+
+
+
+
+

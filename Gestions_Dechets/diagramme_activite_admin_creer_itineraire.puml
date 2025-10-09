@@ -1,0 +1,351 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Administrateur Crée un Itinéraire
+
+start
+
+:Administrateur authentifié;
+:Accéder au tableau de bord;
+:Afficher les statistiques;
+
+:Cliquer sur "Gérer les Itinéraires";
+:Récupérer la liste des itinéraires existants;
+:Afficher la liste des itinéraires;
+note right
+  Informations affichées:
+  - Nom de l'itinéraire
+  - Collecteur assigné
+  - Type d'itinéraire
+  - Statut (planifié, en cours, terminé)
+  - Dates de début et fin
+  - Actions disponibles
+end note
+
+if (Consulter itinéraires existants ?) then (Oui)
+  :Consulter la liste des itinéraires;
+  
+  if (Filtrage souhaité ?) then (Oui)
+    :Appliquer des filtres;
+    
+    if (Filtre par statut ?) then (Oui)
+      :Sélectionner un statut;
+      note right
+        Statuts disponibles:
+        - Planifié
+        - En cours
+        - Terminé
+        - Annulé
+      end note
+    endif
+    
+    if (Filtre par collecteur ?) then (Oui)
+      :Sélectionner un collecteur;
+    endif
+    
+    if (Filtre par type ?) then (Oui)
+      :Sélectionner un type;
+      note right
+        Types disponibles:
+        - Quotidien
+        - Hebdomadaire
+        - Mensuel
+        - Ponctuel
+      end note
+    endif
+    
+    :Afficher les résultats filtrés;
+  endif
+  
+  if (Modifier un itinéraire existant ?) then (Oui)
+    :Cliquer sur "Modifier";
+    :Afficher le formulaire de modification;
+    :Modifier les informations;
+    :Sauvegarder les modifications;
+  endif
+  
+  if (Supprimer un itinéraire ?) then (Oui)
+    :Cliquer sur "Supprimer";
+    :Confirmer la suppression;
+    :Supprimer l'itinéraire;
+  endif
+else (Non)
+  :Passer à la création d'un nouvel itinéraire;
+endif
+
+:Cliquer sur "Nouvel Itinéraire";
+:Récupérer la liste des collecteurs disponibles;
+note right
+  Collecteurs disponibles:
+  - Collecteurs actifs
+  - Triés par nom
+  - Avec informations de contact
+end note
+
+:Afficher le formulaire de création;
+
+:Sélectionner le collecteur assigné;
+if (Collecteur disponible ?) then (Oui)
+  :Choisir un collecteur;
+  :Vérifier la disponibilité du collecteur;
+  
+  if (Conflit d'horaires ?) then (Oui)
+    :Afficher avertissement;
+    :Proposer des créneaux alternatifs;
+    :Permettre la modification des horaires;
+  endif
+else (Non)
+  :Afficher "Aucun collecteur disponible";
+  :Proposer d'assigner automatiquement;
+endif
+
+:Saisir le nom de l'itinéraire;
+if (Nom fourni ?) then (Oui)
+  :Utiliser le nom saisi;
+else (Non)
+  :Générer un nom automatique;
+  note right
+    Nom automatique:
+    "Itinéraire [Type] [Date]"
+    Ex: "Itinéraire Quotidien 2024-01-15"
+  end note
+endif
+
+:Sélectionner le type d'itinéraire;
+if (Type récurrent ?) then (Oui)
+  :Configurer la récurrence;
+  note right
+    Configuration récurrence:
+    - Fréquence (quotidien, hebdomadaire, mensuel)
+    - Date de début
+    - Date de fin
+    - Jours de la semaine (si hebdomadaire)
+  end note
+  
+  :Calculer les dates automatiquement;
+  :Générer les occurrences futures;
+else (Non)
+  :Continuer avec un itinéraire ponctuel;
+endif
+
+:Définir les dates de début et fin;
+if (Date début fournie ?) then (Oui)
+  :Utiliser la date saisie;
+else (Non)
+  :Utiliser la date du jour;
+endif
+
+if (Date fin fournie ?) then (Oui)
+  :Utiliser la date saisie;
+  :Vérifier que date fin >= date début;
+  
+  if (Date fin valide ?) then (Oui)
+    :Continuer;
+  else (Non)
+    :Afficher erreur "Date fin invalide";
+    :Corriger la date;
+  endif
+else (Non)
+  :Calculer automatiquement la date fin;
+  note right
+    Calcul automatique:
+    - Basé sur le type d'itinéraire
+    - Durée estimée des collectes
+    - Jours de travail
+  end note
+endif
+
+:Définir les heures de début et fin;
+if (Heure début fournie ?) then (Oui)
+  :Utiliser l'heure saisie;
+else (Non)
+  :Utiliser l'heure par défaut (08:00);
+endif
+
+if (Heure fin fournie ?) then (Oui)
+  :Utiliser l'heure saisie;
+  :Vérifier que heure fin > heure début;
+  
+  if (Heure fin valide ?) then (Oui)
+    :Continuer;
+  else (Non)
+    :Afficher erreur "Heure fin invalide";
+    :Corriger l'heure;
+  endif
+else (Non)
+  :Calculer automatiquement l'heure fin;
+  note right
+    Calcul automatique:
+    - Basé sur la durée estimée
+    - Temps de trajet
+    - Pauses prévues
+  end note
+endif
+
+:Saisir la description;
+if (Description fournie ?) then (Oui)
+  :Utiliser la description saisie;
+else (Non)
+  :Générer une description automatique;
+  note right
+    Description automatique:
+    "Itinéraire de collecte [Type] 
+    pour [Collecteur] du [Date début] 
+    au [Date fin]"
+  end note
+endif
+
+:Estimer la distance en kilomètres;
+if (Distance fournie ?) then (Oui)
+  :Utiliser la distance saisie;
+else (Non)
+  :Calculer automatiquement la distance;
+  note right
+    Calcul automatique:
+    - Basé sur les points de collecte
+    - Algorithme d'optimisation
+    - Distance totale du parcours
+  end note
+endif
+
+:Estimer la durée en minutes;
+if (Durée fournie ?) then (Oui)
+  :Utiliser la durée saisie;
+else (Non)
+  :Calculer automatiquement la durée;
+  note right
+    Calcul automatique:
+    - Basé sur la distance
+    - Vitesse moyenne
+    - Temps de collecte par point
+    - Pauses prévues
+  end note
+endif
+
+:Ajouter des notes optionnelles;
+if (Notes fournies ?) then (Oui)
+  :Enregistrer les notes;
+else (Non)
+  :Continuer sans notes;
+endif
+
+:Cliquer sur "Créer l'itinéraire";
+
+:Système valide les données;
+if (Validation réussie ?) then (Oui)
+  :Enregistrer l'itinéraire en base;
+  note right
+    Données enregistrées:
+    - nom = nom saisi ou généré
+    - type = type sélectionné
+    - description = description saisie
+    - collecteur_id = collecteur sélectionné
+    - date_debut = date de début
+    - date_fin = date de fin
+    - heure_debut = heure de début
+    - heure_fin = heure de fin
+    - statut = 'planifié'
+    - distance_estimee = distance calculée
+    - duree_estimee = durée calculée
+    - notes = notes optionnelles
+    - admin_id = Auth::id()
+  end note
+  
+  :Attribuer le statut "planifié";
+  :Générer un numéro de référence;
+  
+  if (Itinéraire récurrent ?) then (Oui)
+    :Créer les occurrences futures;
+    :Générer les itinéraires suivants;
+    :Planifier les créations automatiques;
+  endif
+  
+  :Notifier le collecteur assigné;
+  note right
+    Notification au collecteur:
+    - Nouvel itinéraire assigné
+    - Détails de l'itinéraire
+    - Dates et horaires
+    - Instructions spéciales
+  end note
+  
+  :Générer confirmation de création;
+  :Afficher "Itinéraire créé avec succès !";
+  :Afficher le numéro de référence;
+  :Rediriger vers la liste des itinéraires;
+  
+  stop
+  
+else (Non)
+  :Afficher les erreurs de validation;
+  
+  if (Collecteur manquant ?) then (Oui)
+    :Afficher "Collecteur requis";
+  endif
+  
+  if (Nom manquant ?) then (Oui)
+    :Afficher "Nom requis";
+  endif
+  
+  if (Type invalide ?) then (Oui)
+    :Afficher "Type d'itinéraire invalide";
+  endif
+  
+  if (Dates incohérentes ?) then (Oui)
+    :Afficher "Dates incohérentes";
+  endif
+  
+  if (Heures incohérentes ?) then (Oui)
+    :Afficher "Heures incohérentes";
+  endif
+  
+  :Corriger les erreurs;
+  :Renvoyer le formulaire;
+endif
+
+if (Optimisation automatique ?) then (Oui)
+  :Analyser les points de collecte;
+  :Calculer l'itinéraire optimal;
+  :Proposer l'ordre optimisé;
+  :Permettre l'acceptation ou modification;
+endif
+
+if (Vérification des conflits ?) then (Oui)
+  :Vérifier les conflits d'horaires;
+  :Vérifier la disponibilité du collecteur;
+  :Détecter les chevauchements;
+  
+  if (Conflit détecté ?) then (Oui)
+    :Afficher avertissement;
+    :Proposer des solutions;
+    :Permettre la modification;
+  endif
+endif
+
+if (Attribution automatique ?) then (Oui)
+  :Analyser la charge de travail;
+  :Identifier le collecteur le moins chargé;
+  :Proposer l'attribution automatique;
+  :Permettre l'acceptation ou modification;
+endif
+
+if (Erreur système ?) then (Oui)
+  :Afficher message d'erreur système;
+  :Proposer de réessayer;
+  :Sauvegarder les données saisies;
+  :Permettre la reprise ultérieure;
+  stop
+endif
+
+if (Problème de performance ?) then (Oui)
+  :Détecter un grand nombre d'occurrences;
+  :Proposer la création en lot;
+  :Traiter par petits groupes;
+  :Afficher la progression;
+endif
+
+:Retourner à la liste des itinéraires;
+stop
+
+@enduml
+
+

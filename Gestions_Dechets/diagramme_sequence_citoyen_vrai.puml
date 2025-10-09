@@ -1,0 +1,31 @@
+@startuml
+title Diagramme de Sequence - Citoyen
+
+actor Citoyen
+participant "Systeme" as SYS
+
+== Connexion ==
+Citoyen -> SYS: 1. Se connecter
+SYS --> Citoyen: 2. Page dashboard
+
+== Signalement ==
+Citoyen -> SYS: 3. Cliquer "Signaler"
+SYS --> Citoyen: 4. Formulaire signalement
+Citoyen -> SYS: 5. Remplir + envoyer
+SYS --> Citoyen: 6. "Signalement enregistre"
+
+== Demande collecte ==
+Citoyen -> SYS: 7. Cliquer "Demande collecte"
+SYS --> Citoyen: 8. Formulaire demande
+Citoyen -> SYS: 9. Remplir + envoyer
+SYS --> Citoyen: 10. "Demande enregistree"
+
+== Consultation calendrier ==
+Citoyen -> SYS: 11. Cliquer "Calendrier"
+SYS --> Citoyen: 12. Calendrier affiche
+
+== Consultation campagnes ==
+Citoyen -> SYS: 13. Cliquer "Campagnes"
+SYS --> Citoyen: 14. Liste campagnes
+
+@enduml

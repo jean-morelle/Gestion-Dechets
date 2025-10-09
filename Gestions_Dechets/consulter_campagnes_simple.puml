@@ -1,0 +1,82 @@
+@startuml
+title Diagramme de Séquence - Consulter les Campagnes de Sensibilisation
+
+actor "Citoyen" as Citoyen
+participant "Système" as System
+
+== Scénario Nominal ==
+
+Citoyen -> System: Clique sur "Campagnes"
+System -> System: Récupère les campagnes actives
+System -> Citoyen: Affiche la liste des campagnes
+
+System -> Citoyen: Montre titre, description, date
+System -> Citoyen: Affiche le statut (active, terminée, à venir)
+Citoyen -> System: Filtre par catégorie
+
+Citoyen -> System: Clique sur une campagne intéressante
+System -> System: Récupère les détails de la campagne
+System -> Citoyen: Affiche les détails complets
+
+Citoyen -> System: Télécharge des documents
+System -> System: Vérifie l'espace de stockage
+System -> Citoyen: Génère et télécharge les fichiers
+
+Citoyen -> System: Partage la campagne sur les réseaux sociaux
+System -> System: Ouvre les options de partage
+System -> Citoyen: Génère un lien personnalisé
+
+Citoyen -> System: Participe à des quiz ou sondages
+System -> System: Affiche le quiz/sondage
+Citoyen -> System: Répond aux questions
+System -> System: Enregistre les réponses
+System -> Citoyen: Fournit un score et des commentaires
+
+Citoyen -> System: Marque son intérêt ou sa participation
+System -> System: Enregistre l'engagement du citoyen
+System -> Citoyen: Confirme l'enregistrement
+
+== Scénarios Alternatifs ==
+
+note over Citoyen, System: **Aucune campagne active**
+System -> System: Vérifie les campagnes actives
+System -> Citoyen: Affiche "Aucune campagne en cours"
+System -> Citoyen: Affiche message encourageant
+System -> Citoyen: Permet de consulter les campagnes passées
+
+note over Citoyen, System: **Filtrage par type**
+Citoyen -> System: Filtre par type de campagne
+System -> System: Applique le filtre
+System -> Citoyen: Met à jour l'affichage selon le filtre
+Citoyen -> System: Peut combiner plusieurs filtres
+
+note over Citoyen, System: **Recherche dans les campagnes**
+Citoyen -> System: Utilise la fonction de recherche
+Citoyen -> System: Saisit des mots-clés
+System -> System: Recherche dans les titres et descriptions
+System -> Citoyen: Affiche les campagnes correspondantes
+
+note over Citoyen, System: **Campagne avec contenu multimédia**
+System -> System: Détecte contenu multimédia
+System -> Citoyen: Affiche les options de visionnement/téléchargement
+Citoyen -> System: Visionne ou télécharge le contenu
+System -> System: Adapte l'affichage selon le type de média
+
+note over Citoyen, System: **Campagne avec récompenses**
+System -> System: Détecte campagne avec récompenses
+System -> Citoyen: Affiche les points, badges, ou prix disponibles
+Citoyen -> System: Participe et gagne des récompenses
+System -> System: Enregistre les récompenses
+System -> Citoyen: Affiche le classement et les récompenses
+
+note over Citoyen, System: **Campagne avec événements**
+System -> System: Détecte événements
+System -> Citoyen: Affiche les événements disponibles
+Citoyen -> System: S'inscrit aux événements
+System -> System: Gère les inscriptions
+System -> Citoyen: Envoie des rappels pour les événements
+
+@enduml
+
+
+

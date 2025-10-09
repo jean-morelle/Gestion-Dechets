@@ -1,0 +1,150 @@
+@startuml
+title Diagramme de Cas d'Utilisation Global - Systeme de Gestion des Dechets
+
+actor Citoyen
+actor Collecteur
+actor Administrateur
+
+usecase ConsulterDashboard
+usecase ConsulterSignalements
+usecase CreerSignalement
+usecase AfficherSignalement
+usecase EnregistrerSignalement
+usecase ConsulterPlaintes
+usecase CreerPlainte
+usecase AfficherPlainte
+usecase EnregistrerPlainte
+usecase ConsulterDemandesCollecte
+usecase CreerDemandeCollecte
+usecase AfficherDemandeCollecte
+usecase EnregistrerDemandeCollecte
+usecase ConsulterCalendrier
+usecase VoirCampagnes
+usecase AfficherCampagne
+usecase ConsulterNotifications
+usecase EnvoyerMessages
+usecase ConsulterProfil
+usecase ModifierParametres
+usecase ConsulterItineraires
+usecase AfficherItineraire
+usecase DemarrerItineraire
+usecase TerminerItineraire
+usecase ConsulterCollectes
+usecase AfficherCollecte
+usecase DemarrerCollecte
+usecase ValiderCollecte
+usecase MettreAJourCollecte
+usecase SignalerIncident
+usecase ConsulterIncidents
+usecase ConsulterUtilisateurs
+usecase CreerUtilisateur
+usecase AfficherUtilisateur
+usecase ModifierUtilisateur
+usecase SupprimerUtilisateur
+usecase TraiterSignalement
+usecase TraiterPlainte
+usecase CreerItineraire
+usecase ModifierItineraire
+usecase SupprimerItineraire
+usecase CreerCalendrier
+usecase AfficherCalendrier
+usecase ModifierCalendrier
+usecase SupprimerCalendrier
+usecase SuperviserOperations
+usecase ConsulterCampagnes
+usecase CreerCampagne
+usecase ModifierCampagne
+usecase SupprimerCampagne
+usecase PublierCampagne
+usecase ArchiverCampagne
+usecase ConsulterStatistiques
+usecase ExporterRapports
+
+Citoyen --> ConsulterDashboard
+Citoyen --> ConsulterSignalements
+Citoyen --> CreerSignalement
+Citoyen --> AfficherSignalement
+Citoyen --> EnregistrerSignalement
+Citoyen --> ConsulterPlaintes
+Citoyen --> CreerPlainte
+Citoyen --> AfficherPlainte
+Citoyen --> EnregistrerPlainte
+Citoyen --> ConsulterDemandesCollecte
+Citoyen --> CreerDemandeCollecte
+Citoyen --> AfficherDemandeCollecte
+Citoyen --> EnregistrerDemandeCollecte
+Citoyen --> ConsulterCalendrier
+Citoyen --> VoirCampagnes
+Citoyen --> AfficherCampagne
+Citoyen --> ConsulterNotifications
+Citoyen --> EnvoyerMessages
+Citoyen --> ConsulterProfil
+Citoyen --> ModifierParametres
+
+Collecteur --> ConsulterDashboard
+Collecteur --> ConsulterItineraires
+Collecteur --> AfficherItineraire
+Collecteur --> DemarrerItineraire
+Collecteur --> TerminerItineraire
+Collecteur --> ConsulterCollectes
+Collecteur --> AfficherCollecte
+Collecteur --> DemarrerCollecte
+Collecteur --> ValiderCollecte
+Collecteur --> MettreAJourCollecte
+Collecteur --> SignalerIncident
+Collecteur --> ConsulterIncidents
+Collecteur --> VoirCampagnes
+Collecteur --> AfficherCampagne
+Collecteur --> ConsulterNotifications
+Collecteur --> EnvoyerMessages
+Collecteur --> ConsulterProfil
+Collecteur --> ModifierParametres
+
+Administrateur --> ConsulterDashboard
+Administrateur --> ConsulterUtilisateurs
+Administrateur --> CreerUtilisateur
+Administrateur --> AfficherUtilisateur
+Administrateur --> ModifierUtilisateur
+Administrateur --> SupprimerUtilisateur
+Administrateur --> ConsulterSignalements
+Administrateur --> AfficherSignalement
+Administrateur --> TraiterSignalement
+Administrateur --> ConsulterPlaintes
+Administrateur --> AfficherPlainte
+Administrateur --> TraiterPlainte
+Administrateur --> ConsulterItineraires
+Administrateur --> CreerItineraire
+Administrateur --> AfficherItineraire
+Administrateur --> ModifierItineraire
+Administrateur --> SupprimerItineraire
+Administrateur --> ConsulterCalendrier
+Administrateur --> CreerCalendrier
+Administrateur --> AfficherCalendrier
+Administrateur --> ModifierCalendrier
+Administrateur --> SupprimerCalendrier
+Administrateur --> SuperviserOperations
+Administrateur --> ConsulterCampagnes
+Administrateur --> CreerCampagne
+Administrateur --> AfficherCampagne
+Administrateur --> ModifierCampagne
+Administrateur --> SupprimerCampagne
+Administrateur --> PublierCampagne
+Administrateur --> ArchiverCampagne
+Administrateur --> ConsulterNotifications
+Administrateur --> EnvoyerMessages
+Administrateur --> ConsulterStatistiques
+Administrateur --> ExporterRapports
+
+@enduml
+
+
+
+
+
+
+
+
+
+
+
+

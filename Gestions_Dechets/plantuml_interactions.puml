@@ -1,0 +1,60 @@
+@startuml Diagramme_Interactions_Generales
+
+!theme plain
+skinparam actorStyle awesome
+skinparam usecaseStyle rectangle
+
+actor "Citoyen" as Citoyen #lightblue
+actor "Collecteur" as Collecteur #lightgreen
+actor "Administrateur" as Admin #orange
+
+rectangle "Système de Gestion des Déchets" {
+  usecase "Signalement de problème" as Signalement
+  usecase "Plainte" as Plainte
+  usecase "Demande de collecte" as Demande
+  usecase "Itinéraire de collecte" as Itineraire
+  usecase "Collecte" as Collecte
+  usecase "Incident" as Incident
+  usecase "Notification" as Notification
+  usecase "Campagne de sensibilisation" as Campagne
+  usecase "Messagerie" as Message
+}
+
+' Relations principales
+Citoyen --> Signalement
+Citoyen --> Plainte
+Citoyen --> Demande
+Citoyen --> Notification
+Citoyen --> Campagne
+Citoyen --> Message
+
+Collecteur --> Itineraire
+Collecteur --> Collecte
+Collecteur --> Incident
+Collecteur --> Notification
+Collecteur --> Campagne
+Collecteur --> Message
+
+Admin --> Signalement
+Admin --> Plainte
+Admin --> Itineraire
+Admin --> Notification
+Admin --> Campagne
+Admin --> Message
+
+' Relations de dépendance
+Signalement ..> Notification : notifie
+Plainte ..> Notification : notifie
+Demande ..> Itineraire : génère
+Itineraire ..> Collecte : contient
+Collecte ..> Notification : notifie
+Incident ..> Notification : notifie
+Notification ..> Message : peut inclure
+
+@enduml
+
+
+
+
+
+

@@ -1,0 +1,107 @@
+@startuml
+title Diagramme d'Activité - Envoyer des Messages
+
+start
+
+:Citoyen authentifié;
+:Cliquer sur "Messages";
+
+:Récupérer les conversations existantes;
+:Afficher l'interface de messagerie;
+
+if (Type de message ?) then (Nouveau message)
+  :Cliquer sur "Nouveau message";
+  :Afficher le formulaire de composition;
+  
+  :Sélectionner le destinataire;
+  note right
+    - Administrateur
+    - Collecteur
+    - Support technique
+    - Service client
+  end note
+  
+  :Afficher les informations du destinataire;
+  
+elseif (Réponse à message existant) then (Réponse)
+  :Cliquer sur "Répondre" dans une conversation;
+  :Pré-remplir le destinataire et l'objet;
+  :Continuer avec la composition;
+  
+elseif (Message lié à signalement/plainte) then (Lien)
+  :Sélectionner "Lier à un signalement existant";
+  :Récupérer les signalements du citoyen;
+  :Afficher la liste des signalements;
+  :Sélectionner un signalement;
+  :Pré-remplir le contexte;
+  :Lier automatiquement le message au dossier;
+endif
+
+:Saisir l'objet/sujet du message;
+:Rédiger le contenu du message;
+
+if (Pièces jointes ?) then (Oui)
+  :Joindre des fichiers (photos, documents);
+  :Vérifier la taille et le format des fichiers;
+  
+  if (Fichiers valides ?) then (Oui)
+    :Fichiers joints avec succès;
+  else (Non)
+    :Afficher message d'erreur avec contraintes;
+    :Corriger et réessayer;
+  endif
+endif
+
+if (Message long ?) then (Oui)
+  :Proposer de sauvegarder en brouillon;
+  :Permettre de continuer plus tard;
+endif
+
+if (Message urgent ?) then (Oui)
+  :Marquer le message comme "Urgent";
+  :Envoyer notification prioritaire;
+  :Traiter le message en priorité;
+endif
+
+:Relire le message;
+:Cliquer sur "Envoyer";
+
+:Système valide le contenu et les pièces jointes;
+
+if (Contenu valide ?) then (Oui)
+  :Vérifier la disponibilité du destinataire;
+  
+  if (Destinataire indisponible ?) then (Oui)
+    :Proposer d'envoyer quand même ou d'attendre;
+    :Mettre le message en file d'attente si nécessaire;
+  endif
+  
+  if (Message nécessite modération ?) then (Oui)
+    :Informer que le message sera vérifié;
+    :Mettre le message en file de modération;
+    :Envoyer notification quand le message est approuvé;
+  else (Non)
+    :Enregistrer le message;
+    :Envoyer le message au destinataire;
+    :Envoyer notification au destinataire;
+    :Afficher confirmation d'envoi;
+    :Le message apparaît dans la conversation;
+  endif
+  
+  stop
+else (Non)
+  :Afficher "Contenu vide ou invalide";
+  :Corriger et renvoyer;
+endif
+
+if (Erreur d'envoi ?) then (Oui)
+  :Afficher "Erreur lors de l'envoi. Veuillez réessayer.";
+  :Sauvegarder le message en brouillon;
+  :Permettre de réessayer plus tard;
+  stop
+endif
+
+@enduml
+
+
+

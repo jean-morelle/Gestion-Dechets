@@ -1,0 +1,39 @@
+@startuml
+title Diagramme de Sequence - Collecteur
+
+actor Collecteur
+participant "Systeme" as SYS
+
+== Connexion ==
+Collecteur -> SYS: 1. Se connecter
+SYS --> Collecteur: 2. Page dashboard
+
+== Consultation itineraires ==
+Collecteur -> SYS: 3. Cliquer "Mes Itineraires"
+SYS --> Collecteur: 4. Liste itineraires
+
+== Demarrage itineraire ==
+Collecteur -> SYS: 5. Cliquer "Demarrer Itineraire"
+SYS --> Collecteur: 6. "Itineraire demarre"
+
+== Gestion collectes ==
+Collecteur -> SYS: 7. Cliquer "Mes Collectes"
+SYS --> Collecteur: 8. Liste collectes
+
+== Demarrage collecte ==
+Collecteur -> SYS: 9. Cliquer "Demarrer Collecte"
+SYS --> Collecteur: 10. "Collecte demarree"
+
+== Validation collecte ==
+Collecteur -> SYS: 11. Cliquer "Valider Collecte"
+SYS --> Collecteur: 12. Formulaire validation
+Collecteur -> SYS: 13. Upload photo + quantite
+SYS --> Collecteur: 14. "Collecte validee"
+
+== Signalement incident ==
+Collecteur -> SYS: 15. Cliquer "Signaler Incident"
+SYS --> Collecteur: 16. Formulaire incident
+Collecteur -> SYS: 17. Remplir + envoyer
+SYS --> Collecteur: 18. "Incident signale"
+
+@enduml

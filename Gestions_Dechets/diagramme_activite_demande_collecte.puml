@@ -1,0 +1,173 @@
+@startuml
+!theme plain
+title Diagramme d'Activité - Faire une Demande de Collecte
+
+start
+
+:Citoyen authentifié;
+:Cliquer sur "Demande de collecte";
+:Afficher le formulaire de demande;
+
+:Sélectionner le type de collecte;
+note right
+  - Ménagère
+  - Encombrant
+  - Vert
+  - Recyclable
+  - Dangereux
+  - Déménagement
+end note
+
+:Saisir l'objet de la demande;
+
+:Décrire les déchets à collecter;
+
+:Indiquer l'adresse de collecte;
+
+:Spécifier le quartier;
+
+:Sélectionner le niveau d'urgence;
+note right
+  - Faible
+  - Moyenne
+  - Élevée
+  - Urgente
+end note
+
+if (Géolocalisation disponible ?) then (Oui)
+  :Autoriser l'accès à la position;
+  :Récupérer position automatiquement;
+  :Remplir automatiquement l'adresse;
+  :Modifier si nécessaire;
+else (Non)
+  :Saisir manuellement l'adresse;
+endif
+
+:Saisir la date souhaitée de collecte;
+if (Date valide ?) then (Oui)
+  :Date acceptée;
+else (Non)
+  :Afficher erreur "Date dans le passé";
+  :Corriger la date;
+endif
+
+:Saisir l'heure souhaitée de collecte;
+
+:Renseigner le téléphone de contact;
+if (Téléphone fourni ?) then (Oui)
+  :Utiliser le téléphone saisi;
+else (Non)
+  :Utiliser le téléphone du profil;
+endif
+
+if (Télécharger photo ?) then (Oui)
+  :Télécharger une photo des déchets;
+  
+  if (Photo valide ?) then (Oui)
+    :Photo téléchargée avec succès;
+  else (Non)
+    :Afficher erreur de téléchargement;
+    :Continuer sans photo;
+  endif
+else (Non)
+  :Continuer sans photo;
+endif
+
+:Ajouter des instructions spéciales;
+if (Instructions fournies ?) then (Oui)
+  :Enregistrer les instructions;
+else (Non)
+  :Continuer sans instructions;
+endif
+
+:Estimer le montant de la collecte;
+if (Estimation fournie ?) then (Oui)
+  :Enregistrer l'estimation;
+else (Non)
+  :Calculer estimation automatique;
+  :Proposer montant estimé;
+  :Accepter ou modifier l'estimation;
+endif
+
+:Cliquer sur "Enregistrer la demande";
+
+:Système valide les données;
+if (Validation réussie ?) then (Oui)
+  :Ajouter l'ID utilisateur;
+  
+  if (Photo téléchargée ?) then (Oui)
+    :Sauvegarder la photo;
+    :Générer nom de fichier unique;
+    :Enregistrer le chemin de la photo;
+  endif
+  
+  :Enregistrer la demande en base;
+  :Générer un numéro de référence;
+  :Attribuer statut "en_attente";
+  
+  if (Demande urgente ?) then (Oui)
+    :Traiter en priorité;
+    :Envoyer notification immédiate aux admins;
+    :Créer alerte prioritaire;
+    :Informer le citoyen du traitement accéléré;
+  else (Non)
+    :Envoyer notification normale aux admins;
+  endif
+  
+  :Afficher message de confirmation;
+  :Afficher numéro de référence;
+  :Envoyer email de confirmation;
+  :Rediriger vers la page de détail;
+  stop
+  
+else (Non)
+  :Afficher les erreurs de validation;
+  :Identifier les champs manquants;
+  :Surligner les champs en erreur;
+  :Afficher messages d'erreur spécifiques;
+  :Corriger les erreurs;
+  :Renvoyer le formulaire;
+endif
+
+' Scénarios d'exception
+note over :Système valide les données;
+  **Exceptions possibles:**
+  - Erreur de base de données
+  - Problème de sauvegarde photo
+  - Échec envoi notification
+  - Conflit de dates
+end note
+
+if (Erreur système ?) then (Oui)
+  :Afficher message d'erreur système;
+  :Proposer de réessayer;
+  :Sauvegarder les données saisies;
+  :Permettre la reprise ultérieure;
+  stop
+endif
+
+' Flux de sauvegarde automatique
+note over :Saisir l'objet de la demande;
+  **Sauvegarde automatique:**
+  Les données sont sauvegardées
+  automatiquement pendant la saisie
+  pour éviter la perte d'informations
+end note
+
+' Vérifications de cohérence
+note over :Sélectionner le niveau d'urgence;
+  **Vérifications:**
+  - Cohérence type/urgence
+  - Disponibilité collecteur
+  - Capacité de traitement
+end note
+
+' Notifications
+note over :Envoyer notification normale aux admins;
+  **Notifications envoyées:**
+  - Administrateur principal
+  - Collecteurs disponibles
+  - Système de suivi
+end note
+
+@enduml

@@ -1,0 +1,90 @@
+@startuml
+title Diagramme de Sequence - Administrateur
+
+actor Administrateur
+participant "Interface Web" as UI
+participant "AdminController" as AC
+participant "Base de Donnees" as DB
+
+== Connexion ==
+Administrateur -> UI: Se connecter
+UI -> AC: Authentification
+AC -> DB: Verifier credentials
+DB --> AC: Utilisateur valide
+AC --> UI: Session creee
+UI --> Administrateur: Acces au dashboard
+
+== Gestion des utilisateurs ==
+Administrateur -> UI: Cliquer "Utilisateurs"
+UI -> AC: Lister utilisateurs
+AC -> DB: Recuperer tous les utilisateurs
+DB --> AC: Liste utilisateurs
+AC --> UI: Afficher utilisateurs
+UI --> Administrateur: Liste des utilisateurs
+
+== Creation d'un utilisateur ==
+Administrateur -> UI: Cliquer "Nouvel utilisateur"
+UI -> AC: Afficher formulaire
+AC --> UI: Formulaire creation
+Administrateur -> UI: Remplir formulaire
+UI -> AC: Envoyer donnees
+AC -> DB: Creer utilisateur
+DB --> AC: Utilisateur cree
+AC --> UI: Confirmation
+UI --> Administrateur: "Utilisateur cree"
+
+== Traitement des signalements ==
+Administrateur -> UI: Cliquer "Signalements"
+UI -> AC: Lister signalements
+AC -> DB: Recuperer signalements
+DB --> AC: Liste signalements
+AC --> UI: Afficher signalements
+UI --> Administrateur: Liste des signalements
+
+== Traitement d'un signalement ==
+Administrateur -> UI: Cliquer "Traiter signalement"
+UI -> AC: Afficher details
+AC -> DB: Recuperer signalement
+DB --> AC: Details signalement
+AC --> UI: Formulaire traitement
+Administrateur -> UI: Remplir traitement
+UI -> AC: Envoyer traitement
+AC -> DB: Mettre a jour statut "traite"
+AC -> DB: Creer notification citoyen
+DB --> AC: Signalement traite
+AC --> UI: Confirmation
+UI --> Administrateur: "Signalement traite"
+
+== Creation d'itineraire ==
+Administrateur -> UI: Cliquer "Nouvel itineraire"
+UI -> AC: Afficher formulaire
+AC --> UI: Formulaire itineraire
+Administrateur -> UI: Remplir itineraire
+UI -> AC: Envoyer donnees
+AC -> DB: Creer itineraire
+AC -> DB: Assigner au collecteur
+DB --> AC: Itineraire cree
+AC --> UI: Confirmation
+UI --> Administrateur: "Itineraire cree"
+
+== Creation de campagne ==
+Administrateur -> UI: Cliquer "Nouvelle campagne"
+UI -> AC: Afficher formulaire
+AC --> UI: Formulaire campagne
+Administrateur -> UI: Remplir campagne + upload fichier
+UI -> AC: Envoyer campagne
+AC -> DB: Creer campagne
+AC -> DB: Notifier tous les utilisateurs
+DB --> AC: Campagne creee
+AC --> UI: Confirmation
+UI --> Administrateur: "Campagne creee"
+
+== Supervision des operations ==
+Administrateur -> UI: Cliquer "Supervision"
+UI -> AC: Afficher supervision
+AC -> DB: Recuperer statistiques
+DB --> AC: Donnees statistiques
+AC --> UI: Afficher supervision
+UI --> Administrateur: Vue d'ensemble systeme
+
+@enduml

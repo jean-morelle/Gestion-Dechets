@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Nouvelle campagne')
+
 @section('content')
 <div class="container">
     <div class="row">
@@ -106,7 +108,7 @@
                         <div class="mb-3">
                             <label for="image_preview" class="form-label">Image de prévisualisation</label>
                             <input type="file" class="form-control @error('image_preview') is-invalid @enderror" 
-                                   id="image_preview" name="image_preview" accept=".jpg,.jpeg,.png">
+                                   id="image_preview" name="image_preview" accept="image/*">
                             @error('image_preview')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

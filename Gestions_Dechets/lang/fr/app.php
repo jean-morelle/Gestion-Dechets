@@ -3,38 +3,24 @@
 return [
     'date' => 'Date',
     'actions' => 'Actions',
-]; 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    'edit' => 'Modifier',
+    'emergency_notification' => 'Notification d’urgence',
+    'attention' => 'Attention :',
+    'this_notification_will_be_sent_to_all' => 'cette notification sera envoyée immédiatement à tous les',
+    'users' => 'utilisateurs',
+    'emergency_title' => 'Titre de l’alerte',
+    'emergency_message' => 'Message',
+    'minimum_characters' => ':min caractères minimum.',
+    'be_clear_and_concise' => 'Soyez clair et concis.',
+    'action_link' => 'Lien d’action (facultatif)',
+    'recipients' => 'Destinataires',
+    'i_confirm' => 'Je confirme l’envoi de cette notification d’urgence',
+    'unknown_user' => 'Utilisateur inconnu',
+    'not_specified' => 'Non renseigné',
+    'registration_date' => 'Membre depuis',
+    'rejected' => 'Rejetée',
+    'confirm' => 'Confirmer',
+    'back_to_list' => 'Retour à la liste',
+    'back' => 'Retour',
+    'admin_comments' => 'Commentaires de l’administration',
+];

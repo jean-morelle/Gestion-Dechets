@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Mes demandes de collecte')
+
 @section('content')
 <div class="container-fluid">
     <div class="row">

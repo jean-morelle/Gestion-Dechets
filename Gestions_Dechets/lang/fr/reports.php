@@ -12,5 +12,6 @@ return [
     'electronic' => 'Déchets dangereux/électroniques',
     'other' => 'Autre',
     'no_reports' => 'Aucun signalement trouvé',
+    'pending' => 'En attente',
+    'medium' => 'Moyenne',
 ];
-

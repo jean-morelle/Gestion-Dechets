@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Calendrier des collectes')
+
 @section('content')
 <div class="container-fluid">
     <div class="row">

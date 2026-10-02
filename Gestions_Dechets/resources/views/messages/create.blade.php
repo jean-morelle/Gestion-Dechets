@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Nouveau message')
+
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
@@ -22,7 +24,7 @@
                                 <option value="">Sélectionner un destinataire</option>
                                 
                                 @if(isset($users['admin']) && $users['admin']->count() > 0)
-                                    <optgroup label="👨‍💼 Administrateurs">
+                                    <optgroup label="Administration">
                                         @foreach($users['admin'] as $admin)
                                             <option value="{{ $admin->id }}" {{ old('receiver_id') == $admin->id ? 'selected' : '' }}>
                                                 {{ $admin->name }} ({{ $admin->email }})
@@ -32,7 +34,7 @@
                                 @endif
                                 
                                 @if(isset($users['citoyen']) && $users['citoyen']->count() > 0)
-                                    <optgroup label="👤 Citoyens">
+                                    <optgroup label="Citoyens">
                                         @foreach($users['citoyen'] as $citoyen)
                                             <option value="{{ $citoyen->id }}" {{ old('receiver_id') == $citoyen->id ? 'selected' : '' }}>
                                                 {{ $citoyen->name }} ({{ $citoyen->email }})
@@ -42,7 +44,7 @@
                                 @endif
                                 
                                 @if(isset($users['collecteur']) && $users['collecteur']->count() > 0)
-                                    <optgroup label="🚛 Collecteurs">
+                                    <optgroup label="Collecteurs">
                                         @foreach($users['collecteur'] as $collecteur)
                                             <option value="{{ $collecteur->id }}" {{ old('receiver_id') == $collecteur->id ? 'selected' : '' }}>
                                                 {{ $collecteur->name }} ({{ $collecteur->email }})

@@ -5,38 +5,5 @@ return [
     'bulky' => 'Encombrants',
     'recyclable' => 'Recyclable',
     'green_waste' => 'Déchets verts',
-]; 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    'description' => 'Description',
+];

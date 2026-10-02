@@ -120,7 +120,7 @@
                             <div class="mb-3">
                                 <label for="image_preview" class="form-label fw-bold">Image de prévisualisation</label>
                                 <input type="file" class="form-control @error('image_preview') is-invalid @enderror" 
-                                       id="image_preview" name="image_preview" accept=".jpg,.jpeg,.png">
+                                       id="image_preview" name="image_preview" accept="image/*">
                                 <div class="form-text">Image qui apparaîtra dans la liste des campagnes (JPG, PNG)</div>
                                 @if($campagne->image_preview)
                                     <div class="mt-2">

@@ -1,201 +1,147 @@
 @extends('layouts.app')
 
+@section('title', 'Tableau de bord')
+
 @section('content')
-<div class="container">
-    <div class="row mb-3">
-        <div class="col-12">
-            <p class="mb-0">Bonjour {{ auth()->user()->name }}</p>
+@php
+    $s = $statistiques;
+    $prochaine = $itinerairesRecents->first();
+@endphp
+
+<div class="page-header">
+    <div>
+        <h1>Bonjour, {{ \Illuminate\Support\Str::before(auth()->user()->name, ' ') }}</h1>
+        <p>{{ ucfirst(now()->translatedFormat('l j F Y')) }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('collecteur.incidents.create') }}" class="btn btn-outline-danger">
+            <i class="fas fa-triangle-exclamation me-1" aria-hidden="true"></i> Signaler un incident
+        </a>
+        <a href="{{ route('collecteur.itineraires.index') }}" class="btn btn-primary">
+            <i class="fas fa-route me-1" aria-hidden="true"></i> Mes itinéraires
+        </a>
+    </div>
+</div>
+
+@if($prochaine)
+    <div class="card mb-4 border-primary-subtle">
+        <div class="card-body d-flex flex-wrap align-items-center gap-3">
+            <span class="stat-icon tone-green"><i class="fas fa-route" aria-hidden="true"></i></span>
+            <div class="flex-grow-1 min-w-0">
+                <div class="small text-body-secondary">{{ $prochaine->statut === 'en_cours' ? 'Tournée en cours' : 'Prochaine tournée' }}</div>
+                <div class="fw-semibold fs-5 text-truncate">{{ $prochaine->nom }}</div>
+                <div class="small text-body-secondary">
+                    @if($prochaine->date_debut){{ ucfirst($prochaine->date_debut->translatedFormat('l j F')) }}@endif
+                    @if($prochaine->heure_debut) · {{ $prochaine->heure_debut->format('H:i') }}@endif
+                    @if($prochaine->distance_estimee) · {{ rtrim(rtrim($prochaine->distance_estimee, '0'), '.') }} km @endif
+                </div>
+            </div>
+            <a href="{{ route('collecteur.itineraires.show', $prochaine) }}" class="btn btn-primary">
+                {{ $prochaine->statut === 'en_cours' ? 'Continuer' : 'Voir le détail' }}
+                <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i>
+            </a>
         </div>
     </div>
+@endif
 
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h4>{{ $statistiques['itineraires']['total'] }}</h4>
-                    <p>Itinéraires</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h4>{{ $statistiques['collectes']['total'] }}</h4>
-                    <p>Collectes</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h4>{{ $statistiques['collectes']['en_cours'] }}</h4>
-                    <p>En cours</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body text-center">
-                    <h4>{{ $statistiques['notifications']['non_lues'] }}</h4>
-                    <p>Notifications</p>
-                </div>
-            </div>
-        </div>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <a href="{{ route('collecteur.itineraires.index') }}" class="card stat-card">
+            <span class="stat-icon tone-green"><i class="fas fa-route" aria-hidden="true"></i></span>
+            <span>
+                <span class="stat-value d-block">{{ $s['itineraires']['total'] }}</span>
+                <span class="stat-label">Tournées · {{ $s['itineraires']['termines'] }} terminée{{ $s['itineraires']['termines'] > 1 ? 's' : '' }}</span>
+            </span>
+        </a>
     </div>
-
-    <!-- Graphiques et statistiques visuelles -->
-    <div class="row mt-4">
-        <!-- Graphique évolution des collectes -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Évolution des collectes</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="collectesChart" height="80"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Graphique circulaire statut des collectes -->
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Statut des collectes</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="statutCollectesChart"></canvas>
-                </div>
-            </div>
-        </div>
+    <div class="col-6 col-xl-3">
+        <a href="{{ route('collecteur.collectes.index') }}" class="card stat-card">
+            <span class="stat-icon tone-blue"><i class="fas fa-dumpster" aria-hidden="true"></i></span>
+            <span>
+                <span class="stat-value d-block">{{ $s['collectes']['terminees'] }}</span>
+                <span class="stat-label">Collectes réalisées</span>
+            </span>
+        </a>
     </div>
+    <div class="col-6 col-xl-3">
+        <a href="{{ route('collecteur.itineraires.index') }}" class="card stat-card">
+            <span class="stat-icon tone-amber"><i class="fas fa-spinner" aria-hidden="true"></i></span>
+            <span>
+                <span class="stat-value d-block">{{ $s['collectes']['en_cours'] }}</span>
+                <span class="stat-label">Étapes à faire</span>
+            </span>
+        </a>
+    </div>
+    <div class="col-6 col-xl-3">
+        <a href="{{ route('collecteur.collectes.index', ['statut' => 'rate']) }}" class="card stat-card">
+            <span class="stat-icon tone-red"><i class="fas fa-xmark" aria-hidden="true"></i></span>
+            <span>
+                <span class="stat-value d-block">{{ $s['collectes']['ratees'] }}</span>
+                <span class="stat-label">Points non collectés</span>
+            </span>
+        </a>
+    </div>
+</div>
 
-    @if($itinerairesRecents->count() > 0)
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Itinéraires récents</h5>
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Tournées à venir</h5>
+                <a href="{{ route('collecteur.itineraires.index') }}" class="small text-decoration-none">Tout voir</a>
+            </div>
+            @if($itinerairesRecents->isEmpty())
+                <div class="empty-state">
+                    <i class="fas fa-route d-block" aria-hidden="true"></i>
+                    <p class="mb-0">Aucune tournée planifiée. L'administration vous en attribuera une prochainement.</p>
                 </div>
-                <div class="card-body">
+            @else
+                <ul class="activity-list">
                     @foreach($itinerairesRecents as $itineraire)
-                    <div class="border-bottom py-2">
-                        <strong>{{ $itineraire->nom }}</strong>
-                        <span class="badge badge-{{ $itineraire->statut === 'en_cours' ? 'warning' : ($itineraire->statut === 'termine' ? 'success' : 'secondary') }}">
-                            {{ $itineraire->statut }}
-                        </span>
-                        <small class="text-muted">{{ $itineraire->created_at->format('d/m/Y') }}</small>
-                    </div>
+                        <li>
+                            <div class="flex-grow-1 min-w-0">
+                                <a href="{{ route('collecteur.itineraires.show', $itineraire) }}" class="d-block text-truncate">{{ $itineraire->nom }}</a>
+                                <div class="activity-meta">
+                                    {{ $itineraire->date_debut ? ucfirst($itineraire->date_debut->translatedFormat('D j M')) : 'Date à définir' }}
+                                    @if($itineraire->heure_debut) · {{ $itineraire->heure_debut->format('H:i') }}@endif
+                                </div>
+                            </div>
+                            <span class="badge {{ $itineraire->statut_tone }}">{{ $itineraire->statut_label }}</span>
+                        </li>
                     @endforeach
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Collectes récentes</h5>
-                </div>
-                <div class="card-body">
-                    @foreach($collectesRecentes as $collecte)
-                    <div class="border-bottom py-2">
-                        <strong>{{ $collecte->pointDeCollecte->nom ?? 'Point inconnu' }}</strong>
-                        <span class="badge badge-{{ $collecte->statut === 'termine' ? 'success' : ($collecte->statut === 'en_cours' ? 'warning' : 'secondary') }}">
-                            {{ $collecte->statut }}
-                        </span>
-                        <small class="text-muted">{{ $collecte->created_at->format('d/m/Y') }}</small>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
+                </ul>
+            @endif
         </div>
     </div>
-    @endif
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Dernières collectes</h5>
+                <a href="{{ route('collecteur.collectes.index') }}" class="small text-decoration-none">Tout voir</a>
+            </div>
+            @if($collectesRecentes->isEmpty())
+                <div class="empty-state">
+                    <i class="fas fa-dumpster d-block" aria-hidden="true"></i>
+                    <p class="mb-0">Les collectes apparaîtront ici dès que vous démarrerez une tournée.</p>
+                </div>
+            @else
+                <ul class="activity-list">
+                    @foreach($collectesRecentes as $collecte)
+                        <li>
+                            <div class="flex-grow-1 min-w-0">
+                                <a href="{{ route('collecteur.collectes.show', $collecte) }}" class="d-block text-truncate">{{ $collecte->pointDeCollecte->nom ?? 'Point de collecte' }}</a>
+                                <div class="activity-meta text-truncate">
+                                    {{ $collecte->pointDeCollecte->adresse ?? '' }}
+                                    · {{ $collecte->created_at->diffForHumans() }}
+                                </div>
+                            </div>
+                            <span class="badge {{ $collecte->statut_tone }}">{{ $collecte->statut_label }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+    </div>
 </div>
 @endsection
-
-@section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    // Graphique d'évolution des collectes
-    const ctxLine = document.getElementById('collectesChart');
-    if (ctxLine) {
-        new Chart(ctxLine, {
-            type: 'line',
-            data: {
-                labels: ['Il y a 30j', '25j', '20j', '15j', '10j', '5j', "Aujourd'hui"],
-                datasets: [{
-                    label: 'Collectes',
-                    data: [8, 12, 10, 18, 15, 22, 20],
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-
-    // Graphique circulaire des statuts de collectes
-    const ctxDoughnut = document.getElementById('statutCollectesChart');
-    if (ctxDoughnut) {
-        new Chart(ctxDoughnut, {
-            type: 'doughnut',
-            data: {
-                labels: ['Terminées', 'En cours', 'Planifiées', 'Ratées'],
-                datasets: [{
-                    data: [{{ $statistiques['collectes']['terminees'] ?? 0 }}, {{ $statistiques['collectes']['en_cours'] ?? 0 }}, 5, {{ $statistiques['collectes']['ratees'] ?? 0 }}],
-                    backgroundColor: [
-                        'rgb(75, 192, 192)',
-                        'rgb(255, 206, 86)',
-                        'rgb(54, 162, 235)',
-                        'rgb(255, 99, 132)'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 10,
-                            font: {
-                                size: 11
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-</script>
-@endsection
-
-
-
-
-
-
-
-
-
-
-
-

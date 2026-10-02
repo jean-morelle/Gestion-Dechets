@@ -39,17 +39,18 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', 'in:citoyen,collecteur'],
+            'terms' => ['accepted'],
             'telephone' => ['nullable', 'string', 'max:20'],
             'adresse' => ['nullable', 'string', 'max:255'],
-            'quartier' => ['nullable', 'string', 'max:100'],
+            'quartier' => ['required', 'string', 'max:100'],
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => $request->role,
+            // L'inscription publique est réservée aux citoyens ; les collecteurs sont créés par l'administration
+            'role' => 'citoyen',
             'telephone' => $request->telephone,
             'adresse' => $request->adresse,
             'quartier' => $request->quartier,

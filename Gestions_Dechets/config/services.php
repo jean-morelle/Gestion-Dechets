@@ -36,10 +36,6 @@ return [
     ],
 
     // Google Maps Platform
-    'google_maps' => [
-        'key' => env('GOOGLE_MAPS_API_KEY'),
-    ],
-
     // Google OAuth
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),

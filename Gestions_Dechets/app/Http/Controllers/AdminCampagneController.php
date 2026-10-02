@@ -41,11 +41,12 @@ class AdminCampagneController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'required|string',
             'type' => 'required|in:affiche,video,message,infographie',
             'fichier' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
+            'image_preview' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
             'url_video' => 'nullable|url',
             'contenu_message' => 'nullable|string',
             'date_debut' => 'nullable|date',
@@ -53,8 +54,7 @@ class AdminCampagneController extends Controller
             'quartiers_cibles' => 'nullable|array',
             'quartiers_cibles.*' => 'string|max:255',
         ]);
-
-        $data = $request->all();
+        unset($data['fichier'], $data['image_preview']);
         
         // Gestion du fichier
         if ($request->hasFile('fichier')) {
@@ -107,11 +107,12 @@ class AdminCampagneController extends Controller
      */
     public function update(Request $request, Campagne $campagne)
     {
-        $request->validate([
+        $data = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'required|string',
             'type' => 'required|in:affiche,video,message,infographie',
             'fichier' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:10240',
+            'image_preview' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
             'url_video' => 'nullable|url',
             'contenu_message' => 'nullable|string',
             'date_debut' => 'nullable|date',
@@ -119,8 +120,7 @@ class AdminCampagneController extends Controller
             'quartiers_cibles' => 'nullable|array',
             'quartiers_cibles.*' => 'string|max:255',
         ]);
-
-        $data = $request->all();
+        unset($data['fichier'], $data['image_preview']);
         
         // Gestion du fichier
         if ($request->hasFile('fichier')) {

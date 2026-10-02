@@ -113,7 +113,7 @@ class NotificationService
                 'signalement',
                 'Nouveau signalement',
                 "Nouveau signalement de " . $signalement->user->name . " : " . $signalement->type_dechet_label,
-                route('citoyen.signalements.show', $signalement->id)
+                route('admin.signalements.show', $signalement->id)
             );
         }
     }

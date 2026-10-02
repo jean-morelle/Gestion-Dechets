@@ -1,144 +1,89 @@
 @extends('layouts.app')
 
+@section('title', 'Plainte — ' . $plainte->sujet)
+
+@php
+    $statuts = \App\Http\Controllers\AdminPlainteController::STATUTS;
+@endphp
+
 @section('content')
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                    <h6 class="card-title mb-0">Plaintes #{{ $plainte->id }}</h6>
-                    <a href="{{ route('admin.plaintes.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-1"></i> Retour
-                    </a>
-                </div>
-                <div class="card-body py-3">
-                    <!-- Informations principales en 3 colonnes -->
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <h6 class="text-muted small">Type de plainte</h6>
-                            <p class="mb-1">
-                                <span class="badge bg-info">{{ $plainte->type_plainte_label ?? ucfirst(str_replace('_', ' ', $plainte->type_plainte)) }}</span>
-                            </p>
+<div class="page-header">
+    <div>
+        <h1>{{ $plainte->sujet }}
+            <span class="badge {{ ['en_attente' => 'tone-amber', 'en_cours' => 'tone-blue', 'traite' => 'tone-green'][$plainte->statut] ?? 'tone-slate' }} align-middle fs-6">{{ $statuts[$plainte->statut] ?? $plainte->statut }}</span>
+        </h1>
+        <p><a href="{{ route('admin.plaintes.index') }}"><i class="fas fa-arrow-left me-1" aria-hidden="true"></i>Plaintes</a></p>
+    </div>
+</div>
 
-                            <h6 class="text-muted small">Objet</h6>
-                            <p class="mb-1">{{ $plainte->sujet ?? $plainte->objet ?? __('app.not_specified') }}</p>
-
-                            <h6 class="text-muted small">{{ __('complaints.description') }}</h6>
-                            <p class="mb-1">{{ Str::limit($plainte->description, 100) }}</p>
-                        </div>
-                        <div class="col-md-4">
-                            <h6 class="text-muted small">Statut</h6>
-                            <p class="mb-1">
-                                <span class="badge {{ $plainte->statut === 'traite' ? 'bg-success' : ($plainte->statut === 'en_cours' ? 'bg-primary' : ($plainte->statut === 'en_attente' ? 'bg-warning' : 'bg-secondary')) }}">
-                                    {{ $plainte->statut_label ?? ucfirst(str_replace('_', ' ', $plainte->statut)) }}
-                                </span>
-                            </p>
-
-                            <h6 class="text-muted small">Priorité</h6>
-                            <p class="mb-1">
-                                <span class="badge {{ $plainte->priorite === 'elevee' ? 'bg-danger' : ($plainte->priorite === 'moyenne' ? 'bg-warning' : 'bg-secondary') }}">
-                                    {{ $plainte->priorite_label ?? ucfirst($plainte->priorite) }}
-                                </span>
-                            </p>
-
-                            <h6 class="text-muted small">Plaintes Date</h6>
-                            <p class="mb-1">{{ $plainte->created_at->format('d/m/Y H:i') }}</p>
-                        </div>
-                        <div class="col-md-4">
-                            <h6 class="text-muted small">Citoyen</h6>
-                            <p class="mb-1">{{ $plainte->user->name ?? __('app.unknown_user') ?? 'Utilisateur inconnu' }}</p>
-
-                            <h6 class="text-muted small">Email</h6>
-                            <p class="mb-1">{{ $plainte->user->email ?? __('app.not_specified') }}</p>
-
-                            <h6 class="text-muted small">Téléphone</h6>
-                            <p class="mb-1">{{ $plainte->user->telephone ?? __('app.not_specified') }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Informations supplémentaires -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="text-muted small">Quartier</h6>
-                            <p class="mb-1">{{ $plainte->user->quartier ?? __('app.not_specified') }}</p>
-
-                            <h6 class="text-muted small">{{ __('app.registration_date') ?? 'Membre depuis' }}</h6>
-                            <p class="mb-1">{{ $plainte->user->created_at->format('m/Y') }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-muted small">Plaintes Total</h6>
-                            <p class="mb-1">{{ $plainte->user->plaintes()->count() }} Plaintes</p>
-
-                            @if($plainte->date_traitement)
-                            <h6 class="text-muted small">{{ __('complaints.treatment_date') }}</h6>
-                            <p class="mb-1">{{ $plainte->date_traitement->format('d/m/Y H:i') }}</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    @if($plainte->reponse_admin)
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header bg-success text-white py-2">
-                                    <h6 class="mb-0 small"><i class="fas fa-reply me-1"></i> {{ __('complaints.admin_response') }}</h6>
-                                </div>
-                                <div class="card-body py-2">
-                                    <p class="mb-0">{{ $plainte->reponse_admin }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card mb-4">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Motif</dt>
+                    <dd class="col-sm-8">{{ $plainte->type_plainte_label }} · priorité {{ mb_strtolower($plainte->priorite_label) }}</dd>
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Description</dt>
+                    <dd class="col-sm-8">{{ $plainte->description }}</dd>
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Lieu</dt>
+                    <dd class="col-sm-8">{{ $plainte->adresse }}, {{ $plainte->quartier }}</dd>
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Citoyen</dt>
+                    <dd class="col-sm-8">
+                        {{ $plainte->user->name ?? 'Compte supprimé' }}
+                        @php
+                            $tel = $plainte->contact_telephone ?: $plainte->user?->telephone;
+                        @endphp
+                        @if($tel) · <a href="tel:{{ preg_replace('/[^0-9+]/', '', $tel) }}">{{ $tel }}</a>@endif
+                    </dd>
+                    @if($plainte->signalement)
+                        <dt class="col-sm-4 fw-normal text-body-secondary">Signalement lié</dt>
+                        <dd class="col-sm-8"><a href="{{ route('admin.signalements.show', $plainte->signalement) }}">{{ $plainte->signalement->type_dechet_label }} du {{ $plainte->signalement->created_at->format('d/m/Y') }}</a></dd>
                     @endif
-
-                    <!-- Actions d'administration compactes -->
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header bg-primary text-white py-2">
-                                    <h6 class="mb-0 small"><i class="fas fa-cogs me-1"></i> Actions</h6>
-                                </div>
-                                <div class="card-body py-2">
-                                    <form method="POST" action="{{ route('admin.plaintes.traiter', $plainte) }}" class="row g-2">
-                                        @csrf
-                                        
-                                        <div class="col-md-3">
-                                            <label class="form-label small">Statut</label>
-                                            <select name="statut" class="form-select form-select-sm">
-                                                <option value="en_attente" {{ $plainte->statut === 'en_attente' ? 'selected' : '' }}>En attente</option>
-                                                <option value="en_cours" {{ $plainte->statut === 'en_cours' ? 'selected' : '' }}>En cours</option>
-                                                <option value="traite" {{ $plainte->statut === 'traite' ? 'selected' : '' }}>Traitées</option>
-                                                <option value="rejete" {{ $plainte->statut === 'rejete' ? 'selected' : '' }}>{{ __('app.rejected') }}</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="col-md-6">
-                                            <label class="form-label small">{{ __('complaints.admin_response') }}</label>
-                                            <input type="text" name="reponse" class="form-control form-control-sm" 
-                                                   value="{{ $plainte->reponse_admin }}" placeholder="{{ __('complaints.admin_response') }}...">
-                                        </div>
-                                        
-                                        <div class="col-md-3">
-                                            <label class="form-label small">Actions</label>
-                                            <div class="d-flex gap-1">
-                                                <button type="submit" class="btn btn-primary btn-sm">
-                                                    <i class="fas fa-save"></i>
-                                                </button>
-                                                <a href="{{ route('admin.plaintes.destroy', $plainte->id) }}" 
-                                                   class="btn btn-danger btn-sm"
-                                                   onclick="return confirm('{{ __('app.confirm') }}')">
-                                                    <i class="fas fa-trash"></i>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Reçue le</dt>
+                    <dd class="col-sm-8 mb-0">{{ $plainte->created_at->translatedFormat('j F Y à H:i') }}</dd>
+                </dl>
             </div>
         </div>
+
+        @if($plainte->photo)
+            <div class="card mb-4">
+                <div class="card-body">
+                    <img src="{{ asset('storage/' . $plainte->photo) }}" alt="Photo jointe à la plainte" class="img-fluid rounded">
+                </div>
+            </div>
+        @endif
+
+        @if($plainte->latitude && $plainte->longitude)
+            <x-carte.apercu :latitude="$plainte->latitude" :longitude="$plainte->longitude" :libelle="$plainte->adresse" hauteur="260px" />
+        @endif
+    </div>
+
+    <div class="col-xl-5">
+        <form method="POST" action="{{ route('admin.plaintes.update', $plainte) }}" class="card">
+            @csrf
+            @method('PUT')
+            <div class="card-header"><h5>Réponse</h5></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="statut" class="form-label">Statut</label>
+                    <select class="form-select" id="statut" name="statut">
+                        @foreach($statuts as $valeur => $libelle)
+                            <option value="{{ $valeur }}" @selected(old('statut', $plainte->statut) === $valeur)>{{ $libelle }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <label for="reponse" class="form-label">Réponse au citoyen</label>
+                <textarea class="form-control @error('reponse') is-invalid @enderror" id="reponse" name="reponse" rows="5"
+                          placeholder="Expliquez ce qui a été fait ou ce qui va l’être.">{{ old('reponse', $plainte->reponse) }}</textarea>
+                @error('reponse')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                @if($plainte->date_traitement)
+                    <div class="form-text">Dernière mise à jour par {{ $plainte->traitePar->name ?? '—' }}, le {{ $plainte->date_traitement->translatedFormat('j F à H:i') }}.</div>
+                @endif
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">Enregistrer et prévenir le citoyen</button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection

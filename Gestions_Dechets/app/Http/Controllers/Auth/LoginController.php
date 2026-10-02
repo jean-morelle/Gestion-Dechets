@@ -5,21 +5,21 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    /**
-     * Show the application's login form.
-     */
+    /** Tentatives autorisées par adresse e-mail et par IP avant blocage temporaire */
+    const TENTATIVES_MAX = 5;
+    const BLOCAGE_SECONDES = 300;
+
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle a login request to the application.
-     */
     public function login(Request $request)
     {
         $request->validate([
@@ -27,32 +27,47 @@ class LoginController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            $request->session()->regenerate();
+        $cle = Str::lower($request->email) . '|' . $request->ip();
 
-            $user = Auth::user();
-            
-            // Rediriger selon le rôle
-            switch ($user->role) {
-                case 'citoyen':
-                    return redirect()->intended(route('citoyen.dashboard'));
-                case 'collecteur':
-                    return redirect()->intended(route('collecteur.dashboard'));
-                case 'admin':
-                    return redirect()->intended(route('admin.dashboard'));
-                default:
-                    return redirect()->intended('/');
-            }
+        if (RateLimiter::tooManyAttempts($cle, self::TENTATIVES_MAX)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($cle) / 60);
+            throw ValidationException::withMessages([
+                'email' => "Trop de tentatives de connexion. Réessayez dans {$minutes} minute" . ($minutes > 1 ? 's' : '') . ' ou utilisez « Mot de passe oublié ».',
+            ]);
         }
 
-        throw ValidationException::withMessages([
-            'email' => __('auth.failed'),
-        ]);
+        if (! Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+            RateLimiter::hit($cle, self::BLOCAGE_SECONDES);
+
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
+
+        RateLimiter::clear($cle);
+
+        $user = Auth::user();
+
+        // Compte suspendu ou désactivé par l'administration
+        if ($user->statut !== 'actif') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => 'Ce compte est ' . ($user->statut === 'suspendu' ? 'suspendu' : 'désactivé') . '. Contactez le service de la mairie.',
+            ]);
+        }
+
+        $request->session()->regenerate();
+
+        return redirect()->intended(match ($user->role) {
+            'collecteur' => route('collecteur.dashboard'),
+            'admin' => route('admin.dashboard'),
+            default => route('citoyen.dashboard'),
+        });
     }
 
-    /**
-     * Log the user out of the application.
-     */
     public function logout(Request $request)
     {
         Auth::logout();

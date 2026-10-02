@@ -40,13 +40,10 @@ class Signalement extends Model
         'photo',
         'statut',
         'priorite',
-        'urgence',
-        'contact_telephone',
         'date_collecte_prevue',
         'date_collecte_reelle',
         'collecteur_id',
         'notes_admin',
-        'commentaires_admin',
     ];
 
     protected $casts = [

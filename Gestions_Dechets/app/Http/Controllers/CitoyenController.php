@@ -50,11 +50,51 @@ class CitoyenController extends Controller
             ]
         ];
 
-        $signalementsRecents = $user->signalements()->latest()->limit(5)->get();
-        $plaintesRecentes = $user->plaintes()->latest()->limit(5)->get();
-        $demandesRecentes = $user->demandesCollecte()->latest()->limit(5)->get();
+        // Fil d'activité : les dernières démarches, tous types confondus
+        $activites = collect()
+            ->merge($user->signalements()->latest()->limit(5)->get()->map(fn ($s) => [
+                'icone' => 'fa-triangle-exclamation',
+                'ton' => 'amber',
+                'titre' => 'Signalement — ' . $s->type_dechet_label,
+                'detail' => $s->adresse,
+                'statut' => $s->statut_label,
+                'classe' => $s->statut_class,
+                'date' => $s->created_at,
+                'lien' => route('citoyen.signalements.show', $s),
+            ]))
+            ->merge($user->demandesCollecte()->latest()->limit(5)->get()->map(fn ($d) => [
+                'icone' => 'fa-truck',
+                'ton' => 'green',
+                'titre' => 'Demande de collecte — ' . $d->type_collecte_label,
+                'detail' => $d->adresse,
+                'statut' => $d->statut_label,
+                'classe' => $d->statut_class,
+                'date' => $d->created_at,
+                'lien' => route('citoyen.demandes-collecte.show', $d),
+            ]))
+            ->merge($user->plaintes()->latest()->limit(5)->get()->map(fn ($p) => [
+                'icone' => 'fa-comment-dots',
+                'ton' => 'blue',
+                'titre' => 'Plainte — ' . $p->sujet,
+                'detail' => $p->adresse,
+                'statut' => $p->statut_label,
+                'classe' => $p->statut_class,
+                'date' => $p->created_at,
+                'lien' => route('citoyen.plaintes.show', $p),
+            ]))
+            ->sortByDesc('date')
+            ->take(6)
+            ->values();
 
-        return view('citoyen.dashboard', compact('statistiques', 'signalementsRecents', 'plaintesRecentes', 'demandesRecentes'));
+        $collectesQuartier = $user->quartier
+            ? CalendrierCollecte::where('statut', CalendrierCollecte::STATUT_ACTIF)
+                ->where('quartier', $user->quartier)
+                ->orderBy('heure_debut')
+                ->limit(4)
+                ->get()
+            : collect();
+
+        return view('citoyen.dashboard', compact('statistiques', 'activites', 'collectesQuartier'));
     }
 
     /**
@@ -70,24 +110,32 @@ class CitoyenController extends Controller
      */
     public function enregistrerSignalement(Request $request)
     {
-        $request->validate([
+        // Seuls les champs validés sont enregistrés : le statut, les notes de
+        // l'administration ou le collecteur ne peuvent pas venir du citoyen
+        $data = $request->validate([
             'type_dechet' => 'required|in:dechet_menager,dechet_vert,encombrant,dechet_dangereux,dechet_recyclable,autre',
+            'priorite' => 'required|in:faible,moyenne,elevee,urgente',
             'description' => 'required|string|max:1000',
             'adresse' => 'required|string|max:255',
             'quartier' => 'required|string|max:100',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+        ], [
+            'latitude.required' => 'Indiquez l’emplacement des déchets sur la carte.',
+            'longitude.required' => 'Indiquez l’emplacement des déchets sur la carte.',
+        ], [
+            'priorite' => 'niveau d’urgence',
         ]);
 
-        $data = $request->all();
         $data['user_id'] = Auth::id();
+        unset($data['photo']);
 
         // Gérer l'upload de photo
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
             $filename = 'signalements/' . Str::uuid() . '.' . $photo->getClientOriginalExtension();
-            $photo->storeAs('public', $filename);
+            $photo->storeAs('', $filename, 'public');
             $data['photo'] = $filename;
         }
 
@@ -146,7 +194,8 @@ class CitoyenController extends Controller
      */
     public function enregistrerDemandeCollecte(Request $request)
     {
-        $request->validate([
+        // Seuls les champs validés sont enregistrés (pas de statut, de collecteur ni de montant fixés par le citoyen)
+        $data = $request->validate([
             'type_collecte' => 'required|in:menagere,encombrant,vert,recyclable,dangereux,demenagement',
             'objet' => 'required|string|max:255',
             'description' => 'required|string|max:2000',
@@ -159,19 +208,18 @@ class CitoyenController extends Controller
             'heure_souhaitee' => 'nullable|date_format:H:i',
             'contact_telephone' => 'nullable|string|max:20',
             'instructions_speciales' => 'nullable|string|max:1000',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'montant_estime' => 'nullable|numeric|min:0',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
 
-        $data = $request->all();
         $data['user_id'] = Auth::id();
-        $data['contact_telephone'] = $request->get('contact_telephone') ?: Auth::user()->telephone;
+        $data['contact_telephone'] = ($data['contact_telephone'] ?? null) ?: Auth::user()->telephone;
+        unset($data['photo']);
 
         // Gérer l'upload de photo
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
             $filename = 'demandes-collecte/' . Str::uuid() . '.' . $photo->getClientOriginalExtension();
-            $photo->storeAs('public', $filename);
+            $photo->storeAs('', $filename, 'public');
             $data['photo'] = $filename;
         }
 
@@ -268,71 +316,16 @@ class CitoyenController extends Controller
      */
     private function generateCollectionDates($calendriers, $month)
     {
+        $debut = \Carbon\Carbon::parse($month)->startOfMonth();
         $dates = [];
-        $currentMonth = \Carbon\Carbon::parse($month);
-        $startOfMonth = $currentMonth->copy()->startOfMonth();
-        $endOfMonth = $currentMonth->copy()->endOfMonth();
 
-        foreach ($calendriers as $calendrier) {
-            if (!$calendrier->isActif()) {
-                continue;
-            }
-
-            switch ($calendrier->frequence) {
-                case 'quotidienne':
-                    // Tous les jours du mois
-                    $current = $startOfMonth->copy();
-                    while ($current->lte($endOfMonth)) {
-                        if ($calendrier->isDateValide($current->toDateString())) {
-                            $dates[] = $current->day;
-                        }
-                        $current->addDay();
-                    }
-                    break;
-
-                case 'hebdomadaire':
-                    if ($calendrier->jour_semaine) {
-                        $jourSemaine = match($calendrier->jour_semaine) {
-                            'lundi' => 1,
-                            'mardi' => 2,
-                            'mercredi' => 3,
-                            'jeudi' => 4,
-                            'vendredi' => 5,
-                            'samedi' => 6,
-                            'dimanche' => 0,
-                            default => null
-                        };
-                        
-                        if ($jourSemaine !== null) {
-                            $current = $startOfMonth->copy()->next($jourSemaine);
-                            while ($current->lte($endOfMonth)) {
-                                if ($calendrier->isDateValide($current->toDateString())) {
-                                    $dates[] = $current->day;
-                                }
-                                $current->addWeek();
-                            }
-                        }
-                    }
-                    break;
-
-                case 'mensuelle':
-                    // Le premier jour du mois
-                    if ($calendrier->isDateValide($startOfMonth->toDateString())) {
-                        $dates[] = 1;
-                    }
-                    break;
-
-                case 'ponctuelle':
-                    if ($calendrier->date_debut && 
-                        $calendrier->date_debut->month == $currentMonth->month && 
-                        $calendrier->date_debut->year == $currentMonth->year) {
-                        $dates[] = $calendrier->date_debut->day;
-                    }
-                    break;
+        for ($jour = $debut->copy(); $jour->month === $debut->month; $jour->addDay()) {
+            if ($calendriers->contains(fn ($c) => $c->aLieuLe($jour))) {
+                $dates[] = $jour->day;
             }
         }
 
-        return array_unique($dates);
+        return $dates;
     }
 
 
@@ -455,7 +448,8 @@ class CitoyenController extends Controller
      */
     public function enregistrerPlainte(Request $request)
     {
-        $request->validate([
+        // Seuls les champs validés sont enregistrés (pas de réponse ni de statut fixés par le citoyen)
+        $data = $request->validate([
             'type_plainte' => 'required|in:collecte_retard,collecte_oubliee,service_client,autre',
             'sujet' => 'required|string|max:255',
             'description' => 'required|string|max:2000',
@@ -463,20 +457,21 @@ class CitoyenController extends Controller
             'quartier' => 'required|string|max:255',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'contact_telephone' => 'nullable|string|max:20',
             'priorite' => 'required|in:faible,moyenne,elevee,urgente',
-            'signalement_id' => 'nullable|exists:signalements,id',
+            // Uniquement un signalement du citoyen lui-même
+            'signalement_id' => ['nullable', \Illuminate\Validation\Rule::exists('signalements', 'id')->where('user_id', Auth::id())],
         ]);
 
-        $data = $request->all();
         $data['user_id'] = Auth::id();
+        unset($data['photo']);
 
         // Gérer l'upload de photo
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
             $filename = 'plaintes/' . \Str::uuid() . '.' . $photo->getClientOriginalExtension();
-            $photo->storeAs('public', $filename);
+            $photo->storeAs('', $filename, 'public');
             $data['photo'] = $filename;
         }
 
@@ -524,9 +519,7 @@ class CitoyenController extends Controller
      */
     public function profil()
     {
-        $user = Auth::user();
-        
-        return view('citoyen.profil', compact('user'));
+        return redirect()->route('profile.edit');
     }
 }
 

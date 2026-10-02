@@ -1,146 +1,100 @@
 @extends('layouts.app')
 
+@section('title', 'Signalement — ' . $signalement->type_dechet_label)
+
+@php
+    $statuts = \App\Http\Controllers\AdminSignalementController::STATUTS;
+@endphp
+
 @section('content')
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                    <h6 class="card-title mb-0">Signalement #{{ $signalement->id }}</h6>
-                    <a href="{{ route('admin.signalements.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left me-1"></i> Retour
-                    </a>
-                </div>
-                <div class="card-body py-3">
-                    <!-- Informations principales en 3 colonnes -->
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <h6 class="text-muted small">Type de déchet</h6>
-                            <p class="mb-1">{{ $signalement->type_dechet_label ?? 'Non spécifié' }}</p>
+<div class="page-header">
+    <div>
+        <h1>{{ $signalement->type_dechet_label }}
+            <span class="badge {{ ['en_attente' => 'tone-amber', 'en_cours' => 'tone-blue', 'traite' => 'tone-green'][$signalement->statut] ?? 'tone-slate' }} align-middle fs-6">{{ $statuts[$signalement->statut] ?? $signalement->statut }}</span>
+        </h1>
+        <p><a href="{{ route('admin.signalements.index') }}"><i class="fas fa-arrow-left me-1" aria-hidden="true"></i>Signalements</a></p>
+    </div>
+</div>
 
-                            <h6 class="text-muted small">Description</h6>
-                            <p class="mb-1">{{ Str::limit($signalement->description, 50) }}</p>
-
-                            <h6 class="text-muted small">Adresse</h6>
-                            <p class="mb-1">{{ Str::limit($signalement->adresse ?? 'Non spécifié', 30) }}</p>
-                        </div>
-                        <div class="col-md-4">
-                            <h6 class="text-muted small">Quartier</h6>
-                            <p class="mb-1">{{ $signalement->quartier ?? 'Non spécifié' }}</p>
-
-                            <h6 class="text-muted small">Téléphone</h6>
-                            <p class="mb-1">{{ $signalement->contact_telephone ?? 'Non spécifié' }}</p>
-
-                            <h6 class="text-muted small">Citoyen</h6>
-                            <p class="mb-1">{{ $signalement->user->name ?? 'Utilisateur inconnu' }}</p>
-                        </div>
-                        <div class="col-md-4">
-                            <h6 class="text-muted small">Statut</h6>
-                            <p class="mb-1">
-                                <span class="badge {{ $signalement->statut === 'traite' ? 'bg-success' : ($signalement->statut === 'en_cours' ? 'bg-primary' : ($signalement->statut === 'en_attente' ? 'bg-warning' : 'bg-secondary')) }}">
-                                    {{ $signalement->statut_label ?? 'En attente' }}
-                                </span>
-                            </p>
-
-                            <h6 class="text-muted small">Priorité</h6>
-                            <p class="mb-1">
-                                <span class="badge {{ $signalement->priorite_class ?? '' }}">{{ $signalement->priorite_label ?? 'Moyenne' }}</span>
-                            </p>
-
-                            <h6 class="text-muted small">Date</h6>
-                            <p class="mb-1">{{ $signalement->created_at->format('d/m/Y H:i') }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Coordonnées GPS et Photo sur une ligne -->
-                    <div class="row mb-3">
-                        @if($signalement->latitude && $signalement->longitude)
-                        <div class="col-md-6">
-                            <h6 class="text-muted small">Position GPS</h6>
-                            <div class="row">
-                                <div class="col-6">
-                                    <small class="text-muted">Latitude:</small>
-                                    <p class="mb-0 small">{{ $signalement->latitude }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted">Longitude:</small>
-                                    <p class="mb-0 small">{{ $signalement->longitude }}</p>
-                                </div>
-                            </div>
-                        </div>
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card mb-4">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Description</dt>
+                    <dd class="col-sm-8">{{ $signalement->description }}</dd>
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Adresse</dt>
+                    <dd class="col-sm-8">{{ $signalement->adresse }}, {{ $signalement->quartier }}</dd>
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Signalé par</dt>
+                    <dd class="col-sm-8">
+                        {{ $signalement->user->name ?? 'Compte supprimé' }}
+                        @if($signalement->user?->telephone)
+                            · <a href="tel:{{ preg_replace('/[^0-9+]/', '', $signalement->user->telephone) }}">{{ $signalement->user->telephone }}</a>
                         @endif
-                        @if($signalement->photo)
-                        <div class="col-md-6">
-                            <h6 class="text-muted small">Photo</h6>
-                            <div class="text-center">
-                                <img src="{{ asset('storage/' . $signalement->photo) }}"
-                                     alt="Photo"
-                                     class="img-fluid rounded"
-                                     style="max-height: 150px;">
-                            </div>
-                        </div>
-                        @endif
-                    </div>
-
-                    <!-- Actions d'administration compactes -->
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header bg-primary text-white py-2">
-                                    <h6 class="mb-0 small"><i class="fas fa-cogs me-1"></i> Actions</h6>
-                                </div>
-                                <div class="card-body py-2">
-                                    <form method="POST" action="{{ route('admin.signalements.update', $signalement->id) }}" class="row g-2">
-                                        @csrf
-                                        @method('PUT')
-                                        
-                                        <div class="col-md-3">
-                                            <label class="form-label small">Statut</label>
-                                            <select name="statut" class="form-select form-select-sm">
-                                                <option value="en_attente" {{ $signalement->statut === 'en_attente' ? 'selected' : '' }}>En attente</option>
-                                                <option value="en_cours" {{ $signalement->statut === 'en_cours' ? 'selected' : '' }}>En cours</option>
-                                                <option value="traite" {{ $signalement->statut === 'traite' ? 'selected' : '' }}>Traités</option>
-                                                <option value="rejete" {{ $signalement->statut === 'rejete' ? 'selected' : '' }}>Rejeté</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="col-md-3">
-                                            <label class="form-label small">Priorité</label>
-                                            <select name="priorite" class="form-select form-select-sm">
-                                                <option value="faible" {{ $signalement->priorite === 'faible' ? 'selected' : '' }}>Faible</option>
-                                                <option value="moyenne" {{ $signalement->priorite === 'moyenne' ? 'selected' : '' }}>Moyenne</option>
-                                                <option value="elevee" {{ $signalement->priorite === 'elevee' ? 'selected' : '' }}>Élevée</option>
-                                                <option value="urgente" {{ $signalement->priorite === 'urgente' ? 'selected' : '' }}>Urgente</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div class="col-md-4">
-                                            <label class="form-label small">Commentaires admin</label>
-                                            <input type="text" name="commentaires_admin" class="form-control form-control-sm" 
-                                                   value="{{ $signalement->commentaires_admin }}" placeholder="Commentaires admin...">
-                                        </div>
-                                        
-                                        <div class="col-md-2">
-                                            <label class="form-label small">Actions</label>
-                                            <div class="d-flex gap-1">
-                                                <button type="submit" class="btn btn-primary btn-sm">
-                                                    <i class="fas fa-save"></i>
-                                                </button>
-                                                <a href="{{ route('admin.signalements.destroy', $signalement->id) }}" 
-                                                   class="btn btn-danger btn-sm"
-                                                   onclick="return confirm('Êtes-vous sûr ?')">
-                                                    <i class="fas fa-trash"></i>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    </dd>
+                    <dt class="col-sm-4 fw-normal text-body-secondary">Reçu le</dt>
+                    <dd class="col-sm-8 mb-0">{{ $signalement->created_at->translatedFormat('j F Y à H:i') }}</dd>
+                </dl>
             </div>
         </div>
+
+        @if($signalement->photo)
+            <div class="card mb-4">
+                <div class="card-body">
+                    <img src="{{ asset('storage/' . $signalement->photo) }}" alt="Photo jointe au signalement" class="img-fluid rounded">
+                </div>
+            </div>
+        @endif
+
+        @if($signalement->latitude && $signalement->longitude)
+            <x-carte.apercu :latitude="$signalement->latitude" :longitude="$signalement->longitude" :libelle="$signalement->adresse" hauteur="280px" />
+        @endif
+    </div>
+
+    <div class="col-xl-5">
+        <form method="POST" action="{{ route('admin.signalements.update', $signalement) }}" class="card">
+            @csrf
+            @method('PUT')
+            <div class="card-header"><h5>Traitement</h5></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label for="statut" class="form-label">Statut</label>
+                        <select class="form-select" id="statut" name="statut">
+                            @foreach($statuts as $valeur => $libelle)
+                                <option value="{{ $valeur }}" @selected(old('statut', $signalement->statut) === $valeur)>{{ $libelle }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="priorite" class="form-label">Urgence</label>
+                        <select class="form-select" id="priorite" name="priorite">
+                            @foreach(['faible' => 'Faible', 'moyenne' => 'Moyenne', 'elevee' => 'Élevée', 'urgente' => 'Urgente'] as $valeur => $libelle)
+                                <option value="{{ $valeur }}" @selected(old('priorite', $signalement->priorite) === $valeur)>{{ $libelle }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label for="date_collecte_prevue" class="form-label">Intervention prévue le <span class="text-body-secondary fw-normal">(facultatif)</span></label>
+                        <input type="date" class="form-control @error('date_collecte_prevue') is-invalid @enderror" id="date_collecte_prevue" name="date_collecte_prevue"
+                               value="{{ old('date_collecte_prevue', $signalement->date_collecte_prevue?->toDateString()) }}">
+                        @error('date_collecte_prevue')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-12">
+                        <label for="notes_admin" class="form-label">Message au citoyen <span class="text-body-secondary fw-normal">(facultatif)</span></label>
+                        <textarea class="form-control @error('notes_admin') is-invalid @enderror" id="notes_admin" name="notes_admin" rows="3"
+                                  placeholder="Ex. : une équipe passera jeudi matin">{{ old('notes_admin', $signalement->notes_admin) }}</textarea>
+                        @error('notes_admin')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                </div>
+                @if($signalement->date_collecte_reelle)
+                    <div class="form-text mt-2">Traité le {{ $signalement->date_collecte_reelle->translatedFormat('j F Y à H:i') }}.</div>
+                @endif
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">Enregistrer et prévenir le citoyen</button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection

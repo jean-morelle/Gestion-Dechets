@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Ajouter le middleware de locale pour toutes les requêtes web
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\ExigerNouveauMotDePasse::class,
+            \App\Http\Middleware\EntetesSecurite::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

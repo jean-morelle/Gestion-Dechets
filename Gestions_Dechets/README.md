@@ -1,63 +1,78 @@
+# CollectPlus Togo
 
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Application web de gestion des déchets pour une commune du Grand Lomé : les habitants signalent les dépôts
+sauvages et demandent des collectes, la mairie planifie les tournées, les collecteurs les réalisent sur le terrain
+avec leur téléphone.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Ce que fait l'application
 
-## About Laravel
+**Habitants**
+- Signaler un dépôt de déchets en le plaçant sur la carte, avec photo ; suivre son traitement.
+- Demander une collecte (encombrants, déchets verts, déménagement…) et recevoir la date de passage.
+- Déposer une plainte et lire la réponse de la mairie.
+- Consulter le calendrier de collecte du quartier ; être prévenu la veille de chaque passage.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Collecteurs** (sur téléphone)
+- Feuille de route de la tournée : carte, étapes dans l'ordre, navigation GPS vers chaque point.
+- Valider chaque passage avec une photo, la quantité et la position GPS, ou indiquer pourquoi un point n'a pas pu être collecté.
+- Signaler un incident (panne, rue bloquée…) et recevoir la réponse de l'administration.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**Administration**
+- Traiter les signalements, demandes de collecte, plaintes et incidents, avec notification automatique de l'intéressé.
+- Gérer les points de collecte et composer les tournées ; suivre leur avancement étape par étape.
+- Calendrier des passages par quartier.
+- Carte de la commune, rapport d'activité imprimable et exports Excel.
+- Comptes des agents et collecteurs (mot de passe provisoire à changer à la première connexion).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Technique
 
-## Learning Laravel
+Laravel 12 · PHP 8.2 · MySQL · Bootstrap 5 · Leaflet + OpenStreetMap (cartes sans clé d'API).
+Les photos sont réduites dans le navigateur avant l'envoi pour les connexions mobiles lentes.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Installation en local (XAMPP)
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```bash
+cd Gestions_Dechets
+composer install
+cp .env.example .env              # puis : APP_ENV=local, APP_DEBUG=true, MAIL_MAILER=log, SESSION_SECURE_COOKIE=false, DB_*
+php artisan key:generate
+php artisan migrate
+php artisan storage:link
+php artisan db:seed --class=AdminUserSeeder   # comptes de démonstration
+php artisan db:seed --class=CollecteSeeder    # points de collecte et une tournée de démonstration
+php artisan serve                              # http://127.0.0.1:8000
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Comptes de démonstration (mot de passe `password`) : `admin@lome.tg`, `collecteur@test.com`, `citoyen@test.com`.
+À ne jamais créer sur un serveur de production.
 
-## Laravel Sponsors
+En local, les e-mails (mot de passe oublié) sont écrits dans `storage/logs/laravel.log`.
+Les rappels de collecte se déclenchent à la main avec `php artisan collectes:rappeler`.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Tests
 
-### Premium Partners
+```bash
+php artisan test
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Les tests rejouent les parcours complets (tournée d'un collecteur, traitement d'une demande, mot de passe oublié…)
+sur une base SQLite en mémoire : la base MySQL n'est pas touchée. `ExplorationTest` ouvre toutes les pages des
+trois espaces avec un jeu de données complet : à lancer après chaque modification.
 
-## Contributing
+## Documentation
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- [Mise en production](docs/deploiement.md) : serveur, `.env`, tâche planifiée, sauvegardes, liste de contrôle.
+- [Connexion avec Google](docs/google-oauth.md)
+- [Diagrammes UML](docs/diagrammes/) : cas d'utilisation, séquences, activités.
 
-## Code of Conduct
+## Organisation du code
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
+| Dossier | Contenu |
+|---|---|
+| `app/Http/Controllers` | Un contrôleur par espace : `Citoyen…`, `Collecteur…`, `Admin…` (un par module d'administration) |
+| `app/Models` | Signalement, DemandeCollecte, Plainte, PointDeCollecte, Itineraire (tournée), Collecte (passage), Incident… |
+| `app/Console/Commands` | `collectes:rappeler` (rappels de la veille), `assets:telecharger` |
+| `resources/views/components` | Cartes (`carte/choix`, `carte/apercu`, `carte/points`), avatar |
+| `public/js` | `carte.js` (Leaflet), `photos.js` (réduction des photos avant envoi) |
+| `config/quartiers.php` | Liste des quartiers proposés à la saisie |
+| `config/collectplus.php` | Informations de l'organisme exploitant (pages légales) |

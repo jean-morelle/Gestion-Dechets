@@ -1,8 +1,9 @@
 *.log
 .DS_Store
+# Configuration locale : jamais dans le dépôt (seul le modèle .env.example l'est)
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
 .phpactor.json
 .phpunit.result.cache
 /.fleet

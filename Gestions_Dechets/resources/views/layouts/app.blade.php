@@ -1,8 +1,10 @@
 @php
     $theme = auth()->user()?->theme ?: 'light';
+    $accent = auth()->user()?->couleur_accent ?: 'vert';
+    $taille = auth()->user()?->taille_texte ?: 'normale';
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="{{ $theme === 'dark' ? 'dark' : 'light' }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="{{ $theme === 'dark' ? 'dark' : 'light' }}" data-accent="{{ $accent }}" data-taille="{{ $taille }}">
 <head>
     <meta charset="utf-8">
     @if($theme === 'auto')
@@ -180,6 +182,16 @@
             <div class="ms-auto d-flex align-items-center gap-1">
                 @yield('actions')
 
+                {{-- Bascule clair / sombre : appliquée tout de suite, enregistrée sur le compte --}}
+                <form method="POST" action="{{ route('settings.theme') }}" id="bascule-theme" class="m-0">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="theme" value="dark">
+                    <button type="submit" class="btn-icon" aria-label="Passer en mode sombre" title="Mode sombre">
+                        <i class="fas fa-moon" aria-hidden="true"></i>
+                    </button>
+                </form>
+
                 @if(in_array($role, ['citoyen', 'collecteur', 'admin']))
                     <a href="{{ route($role . '.notifications.index') }}" class="btn-icon" aria-label="Notifications{{ $notificationsNonLues ? ' (' . $notificationsNonLues . ' non lues)' : '' }}">
                         <i class="far fa-bell" aria-hidden="true"></i>
@@ -273,6 +285,34 @@
     <script src="{{ $vendorAsset('bootstrap_js') }}"></script>
     <script src="{{ asset('js/photos.js') }}?v={{ filemtime(public_path('js/photos.js')) }}"></script>
     <script>
+        // Bascule clair / sombre : le bouton propose toujours l'inverse du thème affiché
+        (function () {
+            var form = document.getElementById('bascule-theme');
+            if (!form) return;
+            var html = document.documentElement;
+            var champ = form.querySelector('[name="theme"]');
+            var bouton = form.querySelector('button');
+
+            function majBouton() {
+                var sombre = html.getAttribute('data-bs-theme') === 'dark';
+                champ.value = sombre ? 'light' : 'dark';
+                bouton.querySelector('i').className = 'fas ' + (sombre ? 'fa-sun' : 'fa-moon');
+                bouton.setAttribute('aria-label', sombre ? 'Passer en mode clair' : 'Passer en mode sombre');
+                bouton.title = sombre ? 'Mode clair' : 'Mode sombre';
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                html.setAttribute('data-bs-theme', champ.value);
+                fetch(form.action, { method: 'POST', body: new FormData(form), headers: { 'Accept': 'application/json' } });
+                majBouton();
+            });
+
+            // Thème « automatique » : suivre aussi les changements de l'appareil
+            new MutationObserver(majBouton).observe(html, { attributes: true, attributeFilter: ['data-bs-theme'] });
+            majBouton();
+        })();
+
         // Bouton œil des champs mot de passe (même comportement que sur la connexion)
         document.querySelectorAll('.toggle-password').forEach(function (btn) {
             btn.addEventListener('click', function () {

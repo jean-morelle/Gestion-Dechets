@@ -30,7 +30,7 @@
                 @csrf
                 @method('PUT')
                 <fieldset>
-                    <legend class="visually-hidden">Thème</legend>
+                    <legend class="form-label fs-6">Thème</legend>
                     <div class="row g-3">
                         @foreach($themes as $valeur => [$libelle, $description])
                             <div class="col-sm-4">
@@ -41,6 +41,29 @@
                                     <small>{{ $description }}</small>
                                 </label>
                             </div>
+                        @endforeach
+                    </div>
+                </fieldset>
+
+                <fieldset class="mt-4">
+                    <legend class="form-label fs-6">Couleur principale</legend>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach(\App\Http\Controllers\SettingsController::COULEURS as $valeur => $libelle)
+                            <input type="radio" class="btn-check" name="couleur_accent" id="couleur-{{ $valeur }}" value="{{ $valeur }}" @checked(($user->couleur_accent ?: 'vert') === $valeur)>
+                            <label class="couleur-choix" for="couleur-{{ $valeur }}" data-accent="{{ $valeur }}">
+                                <span class="couleur-pastille" aria-hidden="true"></span>{{ $libelle }}
+                            </label>
+                        @endforeach
+                    </div>
+                    <div class="form-text">Menu, boutons et liens. Les couleurs qui ont un sens (collecté, urgent…) ne changent pas.</div>
+                </fieldset>
+
+                <fieldset class="mt-4">
+                    <legend class="form-label fs-6">Taille du texte</legend>
+                    <div class="btn-group" role="group">
+                        @foreach(\App\Http\Controllers\SettingsController::TAILLES as $valeur => $libelle)
+                            <input type="radio" class="btn-check" name="taille_texte" id="taille-{{ $valeur }}" value="{{ $valeur }}" @checked(($user->taille_texte ?: 'normale') === $valeur)>
+                            <label class="btn btn-outline-primary taille-{{ $valeur }}" for="taille-{{ $valeur }}">{{ $libelle }}</label>
                         @endforeach
                     </div>
                 </fieldset>
@@ -234,9 +257,15 @@
 
 @push('scripts')
 <script>
-    // Le thème s'applique dès qu'on le choisit
-    document.querySelectorAll('#form-theme input[name="theme"]').forEach(function (radio) {
-        radio.addEventListener('change', function () { document.getElementById('form-theme').submit(); });
+    // L'apparence change dès qu'on choisit, puis le choix est enregistré sur le compte
+    document.querySelectorAll('#form-theme input[type="radio"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            var html = document.documentElement;
+            if (radio.name === 'couleur_accent') html.setAttribute('data-accent', radio.value);
+            if (radio.name === 'taille_texte') html.setAttribute('data-taille', radio.value);
+            if (radio.name === 'theme' && radio.value !== 'auto') html.setAttribute('data-bs-theme', radio.value);
+            document.getElementById('form-theme').submit();
+        });
     });
 </script>
 @endpush

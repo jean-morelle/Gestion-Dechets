@@ -33,14 +33,42 @@ class ProfilEtParametresTest extends TestCase
         $this->actingAs($user)->get('/profil')->assertSee('votre numéro de téléphone');
     }
 
-    public function test_le_theme_est_enregistre_sur_le_compte(): void
+    public function test_l_apparence_est_enregistree_sur_le_compte(): void
     {
         $user = User::factory()->create(['role' => 'citoyen']);
 
-        $this->actingAs($user)->put('/settings/appearance', ['theme' => 'dark'])->assertRedirect('/settings');
+        $this->actingAs($user)->put('/settings/appearance', [
+            'theme' => 'dark', 'couleur_accent' => 'violet', 'taille_texte' => 'grande',
+        ])->assertRedirect('/settings');
 
+        $user->refresh();
+        $this->assertSame(['dark', 'violet', 'grande'], [$user->theme, $user->couleur_accent, $user->taille_texte]);
+        $this->actingAs($user)->get('/profil')
+            ->assertSee('data-bs-theme="dark"', false)
+            ->assertSee('data-accent="violet"', false)
+            ->assertSee('data-taille="grande"', false);
+    }
+
+    public function test_une_couleur_inconnue_est_refusee(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->put('/settings/appearance', [
+            'theme' => 'light', 'couleur_accent' => 'rose-fluo', 'taille_texte' => 'normale',
+        ])->assertSessionHasErrors('couleur_accent');
+    }
+
+    public function test_le_bouton_clair_sombre_de_la_barre_du_haut(): void
+    {
+        $user = User::factory()->create(['theme' => 'light']);
+
+        // Appel en arrière-plan depuis la page (JavaScript)
+        $this->actingAs($user)->putJson('/settings/theme', ['theme' => 'dark'])->assertNoContent();
         $this->assertSame('dark', $user->fresh()->theme);
-        $this->actingAs($user->fresh())->get('/profil')->assertSee('data-bs-theme="dark"', false);
+
+        // Sans JavaScript : retour à la page d'origine
+        $this->actingAs($user)->from('/citoyen/dashboard')->put('/settings/theme', ['theme' => 'light'])->assertRedirect('/citoyen/dashboard');
+        $this->assertSame('light', $user->fresh()->theme);
     }
 
     public function test_changer_le_mot_de_passe_exige_l_ancien(): void

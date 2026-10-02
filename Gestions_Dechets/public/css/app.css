@@ -12,6 +12,7 @@
     --cp-green-600: #1d7a4c;
     --cp-green-100: #e3f2ea;
     --cp-yellow: #f2b705;
+    --cp-succes: #1d7a4c; /* vert « fait / collecté » : ne suit pas la couleur choisie */
 
     --cp-sidebar-bg: var(--cp-green-900);
     --cp-sidebar-width: 256px;
@@ -52,6 +53,47 @@
     --cp-muted-bg: #1f2a26;
     --cp-green-100: #1b3a2b;
 }
+
+/* ---------- Couleur principale choisie par l'utilisateur (Paramètres) ----------
+ * Le vert reste la valeur par défaut. Les couleurs qui ont un sens (collecté,
+ * non collecté, urgent…) ne changent pas.
+ */
+[data-accent="bleu"]   { --cp-green-900: #0d2b45; --cp-green-800: #12395b; --cp-green-700: #174a75; --cp-green-600: #1f6fb2; }
+[data-accent="ocre"]   { --cp-green-900: #4a2306; --cp-green-800: #66310a; --cp-green-700: #8a430f; --cp-green-600: #b45309; }
+[data-accent="violet"] { --cp-green-900: #2e1a47; --cp-green-800: #3d235e; --cp-green-700: #4f2d7a; --cp-green-600: #6b3fa0; }
+
+[data-bs-theme="light"][data-accent="bleu"] {
+    --bs-primary-rgb: 31, 111, 178; --bs-link-color-rgb: 23, 74, 117; --bs-link-hover-color-rgb: 18, 57, 91;
+    --bs-focus-ring-color: rgba(31, 111, 178, .25); --cp-green-100: #e2edf8;
+}
+[data-bs-theme="light"][data-accent="ocre"] {
+    --bs-primary-rgb: 180, 83, 9; --bs-link-color-rgb: 138, 67, 15; --bs-link-hover-color-rgb: 102, 49, 10;
+    --bs-focus-ring-color: rgba(180, 83, 9, .25); --cp-green-100: #fbeedf;
+}
+[data-bs-theme="light"][data-accent="violet"] {
+    --bs-primary-rgb: 107, 63, 160; --bs-link-color-rgb: 79, 45, 122; --bs-link-hover-color-rgb: 61, 35, 94;
+    --bs-focus-ring-color: rgba(107, 63, 160, .25); --cp-green-100: #efe7f8;
+}
+
+[data-bs-theme="dark"][data-accent="bleu"] {
+    --bs-primary: #4c9be0; --bs-primary-rgb: 76, 155, 224;
+    --bs-link-color: #7db6ea; --bs-link-color-rgb: 125, 182, 234; --bs-link-hover-color: #a6cdf1; --bs-link-hover-color-rgb: 166, 205, 241;
+    --bs-focus-ring-color: rgba(76, 155, 224, .3); --cp-green-100: #172b40;
+}
+[data-bs-theme="dark"][data-accent="ocre"] {
+    --bs-primary: #e08a3c; --bs-primary-rgb: 224, 138, 60;
+    --bs-link-color: #eba567; --bs-link-color-rgb: 235, 165, 103; --bs-link-hover-color: #f2c294; --bs-link-hover-color-rgb: 242, 194, 148;
+    --bs-focus-ring-color: rgba(224, 138, 60, .3); --cp-green-100: #3a2614;
+}
+[data-bs-theme="dark"][data-accent="violet"] {
+    --bs-primary: #a07ad1; --bs-primary-rgb: 160, 122, 209;
+    --bs-link-color: #b99ae0; --bs-link-color-rgb: 185, 154, 224; --bs-link-hover-color: #d0bbec; --bs-link-hover-color-rgb: 208, 187, 236;
+    --bs-focus-ring-color: rgba(160, 122, 209, .3); --cp-green-100: #2c2140;
+}
+
+/* Taille du texte : tout est en rem, l'interface entière s'agrandit */
+[data-taille="grande"] { font-size: 112.5%; }
+[data-taille="tres-grande"] { font-size: 125%; }
 
 body {
     font-size: .9375rem;
@@ -721,7 +763,7 @@ a.stat-card:hover { border-color: var(--bs-primary); color: inherit; }
     border-radius: .375rem;
     overflow: hidden;
 }
-.theme-apercu span:first-child { width: 28%; border-radius: 3px; background: #0f3b2a; }
+.theme-apercu span:first-child { width: 28%; border-radius: 3px; background: var(--cp-green-900); }
 .theme-apercu span:last-child { flex: 1; border-radius: 3px; }
 .theme-apercu-light { background: #e9edeb; }
 .theme-apercu-light span:last-child { background: #fff; }
@@ -768,7 +810,7 @@ a.stat-card:hover { border-color: var(--bs-primary); color: inherit; }
     color: #fff;
     background: #b07d00;
 }
-.cp-pin-fait span { background: var(--cp-green-600); }
+.cp-pin-fait span { background: var(--cp-succes); }
 .cp-pin-rate span { background: #c0392b; }
 .cp-pin-inactif span { background: #7b8a84; }
 
@@ -794,7 +836,7 @@ a.stat-card:hover { border-color: var(--bs-primary); color: inherit; }
     color: #fff;
     background: #b07d00;
 }
-.etape-num.cp-pin-fait span { background: var(--cp-green-600); }
+.etape-num.cp-pin-fait span { background: var(--cp-succes); }
 .etape-num.cp-pin-rate span { background: #c0392b; }
 .etapes-suivi > li.etape-prochaine { background: var(--cp-muted-bg); }
 a.tournee-carte:hover { border-color: var(--bs-primary); }
@@ -809,7 +851,7 @@ a.tournee-carte:hover { border-color: var(--bs-primary); }
     border-radius: 50%;
     background: #b07d00;
 }
-.legende-pastille.cp-pin-fait { background: var(--cp-green-600); }
+.legende-pastille.cp-pin-fait { background: var(--cp-succes); }
 .legende-pastille.cp-pin-rate { background: #c0392b; }
 .legende-pastille.cp-pin-bleu { background: #1f6fb2; }
 
@@ -826,3 +868,28 @@ a.tournee-carte:hover { border-color: var(--bs-primary); }
 .page-texte { max-width: 760px; }
 .page-texte h2 { font-size: 1.15rem; margin-top: 2rem; }
 .page-texte .a-completer { background: #fdf3d7; padding: 0 .25rem; border-radius: 3px; }
+
+/* Choix de la couleur principale : chaque pastille montre sa propre couleur */
+.couleur-choix {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .5rem .875rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 999px;
+    background: var(--cp-surface);
+    cursor: pointer;
+}
+.couleur-pastille {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--cp-green-600);
+}
+.couleur-choix:hover { border-color: var(--cp-green-600); }
+.btn-check:checked + .couleur-choix { border-color: var(--cp-green-600); box-shadow: 0 0 0 1px var(--cp-green-600); }
+.btn-check:focus-visible + .couleur-choix { box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color); }
+
+/* Aperçu de la taille directement sur les boutons */
+.taille-grande { font-size: 1.06rem; }
+.taille-tres-grande { font-size: 1.15rem; }

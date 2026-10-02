@@ -13,6 +13,20 @@ use Illuminate\Validation\Rules\Password;
 
 class SettingsController extends Controller
 {
+    /** Couleur principale de l'interface (voir [data-accent] dans app.css) */
+    const COULEURS = [
+        'vert' => 'Vert CollectPlus',
+        'bleu' => 'Bleu lagune',
+        'ocre' => 'Ocre',
+        'violet' => 'Violet',
+    ];
+
+    const TAILLES = [
+        'normale' => 'Normale',
+        'grande' => 'Grande',
+        'tres-grande' => 'Très grande',
+    ];
+
     /**
      * Afficher la page des paramètres
      */
@@ -29,13 +43,27 @@ class SettingsController extends Controller
      */
     public function updateAppearance(Request $request)
     {
-        $request->validate([
+        $donnees = $request->validate([
             'theme' => ['required', 'in:light,dark,auto'],
+            'couleur_accent' => ['required', 'in:' . implode(',', array_keys(self::COULEURS))],
+            'taille_texte' => ['required', 'in:' . implode(',', array_keys(self::TAILLES))],
         ]);
 
-        $request->user()->update(['theme' => $request->theme]);
+        $request->user()->update($donnees);
 
-        return redirect()->route('settings.index')->with('success', 'Thème enregistré.');
+        return redirect()->route('settings.index')->with('success', 'Apparence enregistrée.');
+    }
+
+    /**
+     * Bouton clair/sombre de la barre du haut : bascule sans quitter la page
+     */
+    public function basculerTheme(Request $request)
+    {
+        $donnees = $request->validate(['theme' => ['required', 'in:light,dark']]);
+
+        $request->user()->update($donnees);
+
+        return $request->expectsJson() ? response()->noContent() : back();
     }
 
     /**

@@ -36,6 +36,8 @@ class User extends Authenticatable
         'photo',
         'statut',
         'theme',
+        'couleur_accent',
+        'taille_texte',
         'language',
         'notification_preferences',
         'two_factor_secret',

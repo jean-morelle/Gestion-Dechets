@@ -207,6 +207,7 @@ Route::middleware('auth')->group(function () {
     // Paramètres
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');
+    Route::put('/settings/theme', [SettingsController::class, 'basculerTheme'])->name('settings.theme');
     Route::put('/settings/notifications', [SettingsController::class, 'updateNotifications'])->name('settings.notifications');
     Route::get('/settings/mes-donnees', [SettingsController::class, 'exporterDonnees'])->name('settings.donnees');
     Route::delete('/settings/compte', [SettingsController::class, 'supprimerCompte'])->name('settings.compte.destroy');

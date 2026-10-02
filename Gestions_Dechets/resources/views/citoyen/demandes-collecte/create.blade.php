@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Nouvelle demande de collecte')
+
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
@@ -82,6 +84,9 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <x-carte.choix :latitude="old('latitude')" :longitude="old('longitude')"
+                                       aide="Placez le repère devant votre domicile : le collecteur le retrouvera plus facilement." />
 
                         <div class="mb-1">
                             <label for="adresse" class="form-label small">Adresse <span class="text-danger">*</span></label>

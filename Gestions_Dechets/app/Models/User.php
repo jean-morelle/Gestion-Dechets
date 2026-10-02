@@ -26,6 +26,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'mot_de_passe_defini',
+        'doit_changer_mot_de_passe',
         'google_id',
         'role',
         'telephone',
@@ -53,6 +55,13 @@ class User extends Authenticatable
     ];
 
     /**
+     * Valeur par défaut avant enregistrement (identique à celle de la base)
+     */
+    protected $attributes = [
+        'mot_de_passe_defini' => true,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -62,6 +71,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'mot_de_passe_defini' => 'boolean',
+            'doit_changer_mot_de_passe' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
             'two_factor_enabled' => 'boolean',
             'two_factor_recovery_codes' => 'array',

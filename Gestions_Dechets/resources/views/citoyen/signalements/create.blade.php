@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Nouveau signalement')
+
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
@@ -32,15 +34,15 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-1">
-                                    <label for="urgence" class="form-label small">Niveau d'urgence <span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm @error('urgence') is-invalid @enderror" id="urgence" name="urgence" required>
+                                    <label for="priorite" class="form-label small">Niveau d'urgence <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-sm @error('priorite') is-invalid @enderror" id="priorite" name="priorite" required>
                                         <option value="">---</option>
-                                        <option value="faible" {{ old('urgence') === 'faible' ? 'selected' : '' }}>Faible</option>
-                                        <option value="moyenne" {{ old('urgence') === 'moyenne' ? 'selected' : '' }}>Moyenne</option>
-                                        <option value="elevee" {{ old('urgence') === 'elevee' ? 'selected' : '' }}>Élevée</option>
-                                        <option value="urgente" {{ old('urgence') === 'urgente' ? 'selected' : '' }}>Urgente</option>
+                                        <option value="faible" {{ old('priorite') === 'faible' ? 'selected' : '' }}>Faible</option>
+                                        <option value="moyenne" {{ old('priorite') === 'moyenne' ? 'selected' : '' }}>Moyenne</option>
+                                        <option value="elevee" {{ old('priorite') === 'elevee' ? 'selected' : '' }}>Élevée</option>
+                                        <option value="urgente" {{ old('priorite') === 'urgente' ? 'selected' : '' }}>Urgente</option>
                                     </select>
-                                    @error('urgence')
+                                    @error('priorite')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -55,6 +57,9 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        <x-carte.choix :latitude="old('latitude')" :longitude="old('longitude')" requis
+                                       aide="Cliquez à l’endroit des déchets, ou utilisez « Ma position » si vous y êtes. L’adresse se remplit toute seule." />
 
                         <div class="row">
                             <div class="col-md-8">
@@ -80,37 +85,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-3">
-                                <div class="mb-1">
-                                    <label for="latitude" class="form-label small">Latitude</label>
-                                    <input type="number" step="any" class="form-control form-control-sm @error('latitude') is-invalid @enderror" 
-                                           id="latitude" name="latitude" value="{{ old('latitude') }}">
-                                    @error('latitude')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-1">
-                                    <label for="longitude" class="form-label small">Longitude</label>
-                                    <input type="number" step="any" class="form-control form-control-sm @error('longitude') is-invalid @enderror" 
-                                           id="longitude" name="longitude" value="{{ old('longitude') }}">
-                                    @error('longitude')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-1">
-                                    <label for="contact_telephone" class="form-label small">Téléphone</label>
-                                    <input type="tel" class="form-control form-control-sm @error('contact_telephone') is-invalid @enderror" 
-                                           id="contact_telephone" name="contact_telephone" value="{{ old('contact_telephone', auth()->user()->telephone) }}">
-                                    @error('contact_telephone')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-3">
+                            <div class="col-12">
                                 <div class="mb-1">
                                     <label for="photo" class="form-label small">Photo</label>
                                     <input type="file" class="form-control form-control-sm @error('photo') is-invalid @enderror" 

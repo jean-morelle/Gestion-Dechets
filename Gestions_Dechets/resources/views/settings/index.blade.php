@@ -1,186 +1,242 @@
 @extends('layouts.app')
 
+@section('title', 'Paramètres')
+
+@php
+    $aUnMotDePasse = \App\Http\Controllers\SettingsController::aUnMotDePasse($user);
+    $themes = [
+        'light' => ['Clair', 'Fond blanc, idéal en journée'],
+        'dark' => ['Sombre', 'Moins éblouissant le soir'],
+        'auto' => ['Automatique', 'Suit le réglage de votre appareil'],
+    ];
+    $autresAppareils = $appareils->where('actuel', false)->count();
+@endphp
+
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Paramètres</h2>
-            </div>
-
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
-            <div class="row">
-                <div class="col-md-6">
-                    <!-- Notifications -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Notifications</h5>
-                        </div>
-                        <div class="card-body">
-                            <form method="POST" action="{{ route('settings.notifications.update') }}">
-                                @csrf
-                                @method('PUT')
-                                
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="notifications_email" name="notifications_email" 
-                                           {{ session('notifications_email', true) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="notifications_email">
-                                        Recevoir des notifications par email
-                                    </label>
-                                </div>
-
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="notifications_sms" name="notifications_sms"
-                                           {{ session('notifications_sms', false) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="notifications_sms">
-                                        Recevoir des notifications par SMS
-                                    </label>
-                                </div>
-
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="notifications_push" name="notifications_push"
-                                           {{ session('notifications_push', true) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="notifications_push">
-                                        Notifications push dans l'application
-                                    </label>
-                                </div>
-
-                                <div class="d-flex justify-content-end">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> Sauvegarder les notifications
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Apparence -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Apparence</h5>
-                        </div>
-                        <div class="card-body">
-                            <form method="POST" action="{{ route('settings.appearance.update') }}" id="appearanceForm">
-                                @csrf
-                                @method('PUT')
-                                
-                                <div class="mb-3">
-                                    <label for="theme" class="form-label">Thème</label>
-                                    <select class="form-select" id="theme" name="theme">
-                                        <option value="light" {{ session('theme', 'light') == 'light' ? 'selected' : '' }}>Mode clair</option>
-                                        <option value="dark" {{ session('theme', 'light') == 'dark' ? 'selected' : '' }}>Mode sombre</option>
-                                    </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="language" class="form-label">Langue</label>
-                                    <select class="form-select" id="language" name="language">
-                                        <option value="fr" {{ session('language', 'fr') == 'fr' ? 'selected' : '' }}>Français</option>
-                                    </select>
-                                    <div class="form-text">
-                                        La page sera rechargée après le changement de langue.
-                                    </div>
-                                </div>
-
-                                <div class="d-flex justify-content-end">
-                                    <button type="button" class="btn btn-primary" onclick="applySettings()">
-                                        <i class="fas fa-save"></i> Sauvegarder les paramètres
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <!-- Sécurité -->
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Sécurité</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <h6>Authentification à deux facteurs</h6>
-                                <p class="text-muted small">Ajoutez une couche de sécurité supplémentaire à votre compte.</p>
-                                <button class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-shield-alt"></i> Configurer la 2FA
-                                </button>
-                            </div>
-
-                            <div class="mb-3">
-                                <h6>Sessions actives</h6>
-                                <p class="text-muted small">Gérez vos sessions de connexion.</p>
-                                <button class="btn btn-outline-warning btn-sm">
-                                    <i class="fas fa-sign-out-alt"></i> Se déconnecter de tous les appareils
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Données et confidentialité -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">Données et confidentialité</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <h6>Export des données</h6>
-                                <p class="text-muted small">Téléchargez une copie de vos données personnelles.</p>
-                                <button class="btn btn-outline-info btn-sm">
-                                    <i class="fas fa-download"></i> Exporter mes données
-                                </button>
-                            </div>
-
-                            <div class="mb-3">
-                                <h6>Suppression du compte</h6>
-                                <p class="text-muted small">Supprimer définitivement votre compte et toutes vos données.</p>
-                                <button class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-trash"></i> Supprimer mon compte
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="page-header">
+    <div>
+        <h1>Paramètres</h1>
+        <p>Apparence de l’application et sécurité de votre compte.</p>
     </div>
 </div>
 
-<script>
-function applySettings() {
-    // Récupérer les valeurs sélectionnées
-    const theme = document.getElementById('theme').value;
-    const language = document.getElementById('language').value;
-    
-    // Appliquer le thème immédiatement
-    document.body.className = document.body.className.replace(/theme-\w+/g, '');
-    document.body.classList.add(`theme-${theme}`);
-    localStorage.setItem('theme', theme);
-    
-    // Sauvegarder la langue
-    localStorage.setItem('language', language);
-    
-    // Soumettre le formulaire pour sauvegarder côté serveur
-    document.getElementById('appearanceForm').submit();
-}
+<div class="settings-col">
+    <section class="card mb-4" aria-labelledby="titre-apparence">
+        <div class="card-header">
+            <h5 id="titre-apparence">Apparence</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ route('settings.appearance.update') }}" id="form-theme">
+                @csrf
+                @method('PUT')
+                <fieldset>
+                    <legend class="visually-hidden">Thème</legend>
+                    <div class="row g-3">
+                        @foreach($themes as $valeur => [$libelle, $description])
+                            <div class="col-sm-4">
+                                <input type="radio" class="btn-check" name="theme" id="theme-{{ $valeur }}" value="{{ $valeur }}" @checked(($user->theme ?: 'light') === $valeur)>
+                                <label class="theme-choix" for="theme-{{ $valeur }}">
+                                    <span class="theme-apercu theme-apercu-{{ $valeur }}" aria-hidden="true"><span></span><span></span></span>
+                                    <strong>{{ $libelle }}</strong>
+                                    <small>{{ $description }}</small>
+                                </label>
+                            </div>
+                        @endforeach
+                    </div>
+                </fieldset>
+                <noscript><button type="submit" class="btn btn-primary mt-3">Enregistrer</button></noscript>
+            </form>
+        </div>
+    </section>
 
-// Charger les paramètres au démarrage
-document.addEventListener('DOMContentLoaded', function() {
-    // Appliquer le thème sauvegardé
-    const savedTheme = localStorage.getItem('theme') || '{{ session('theme', 'light') }}';
-    document.body.className = document.body.className.replace(/theme-\w+/g, '');
-    document.body.classList.add(`theme-${savedTheme}`);
-    document.getElementById('theme').value = savedTheme;
-    
-    // Appliquer la langue sauvegardée
-    const savedLanguage = localStorage.getItem('language') || '{{ session('language', 'fr') }}';
-    document.getElementById('language').value = savedLanguage;
-});
-</script>
+    @if($user->role === 'citoyen')
+        <section class="card mb-4" aria-labelledby="titre-notifications">
+            <div class="card-header">
+                <h5 id="titre-notifications">Notifications</h5>
+            </div>
+            <form method="POST" action="{{ route('settings.notifications') }}" class="card-body" id="form-notifications">
+                @csrf
+                @method('PUT')
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="rappel_collecte" name="rappel_collecte" value="1"
+                           @checked(($user->notification_preferences['rappel_collecte'] ?? true) !== false)
+                           onchange="this.form.submit()">
+                    <label class="form-check-label" for="rappel_collecte">
+                        Me prévenir la veille des collectes dans mon quartier
+                        <span class="d-block small text-body-secondary">
+                            @if($user->quartier)
+                                Quartier : {{ $user->quartier }}. Vous pouvez le modifier dans <a href="{{ route('profile.edit') }}">Mon profil</a>.
+                            @else
+                                Indiquez votre quartier dans <a href="{{ route('profile.edit') }}">Mon profil</a> pour recevoir les rappels.
+                            @endif
+                        </span>
+                    </label>
+                </div>
+                <noscript><button type="submit" class="btn btn-sm btn-primary mt-2">Enregistrer</button></noscript>
+            </form>
+        </section>
+    @endif
+
+    <section id="securite" aria-labelledby="titre-securite">
+        <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-3" id="titre-securite">Sécurité</h2>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>{{ $aUnMotDePasse ? 'Mot de passe' : 'Définir un mot de passe' }}</h5>
+            </div>
+            <div class="card-body">
+                @unless($aUnMotDePasse)
+                    <p class="small text-body-secondary">
+                        Votre compte a été créé avec Google. Choisissez un mot de passe si vous souhaitez aussi
+                        vous connecter avec votre adresse e-mail.
+                    </p>
+                @endunless
+
+                <form method="POST" action="{{ route('settings.password') }}">
+                    @csrf
+                    @method('PUT')
+                    <div class="row g-3">
+                        @if($aUnMotDePasse)
+                            <div class="col-12 col-md-6">
+                                <label for="current_password" class="form-label">Mot de passe actuel</label>
+                                <div class="password-field">
+                                    <input type="password" class="form-control @error('current_password') is-invalid @enderror" id="current_password" name="current_password" required autocomplete="current-password">
+                                    <button type="button" class="toggle-password" data-target="current_password" aria-label="Afficher le mot de passe"><i class="far fa-eye"></i></button>
+                                    @error('current_password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="w-100 m-0"></div>
+                        @endif
+                        <div class="col-md-6">
+                            <label for="new_password" class="form-label">Nouveau mot de passe</label>
+                            <div class="password-field">
+                                <input type="password" class="form-control @error('password') is-invalid @enderror" id="new_password" name="password" required minlength="8" autocomplete="new-password" aria-describedby="aide-mdp">
+                                <button type="button" class="toggle-password" data-target="new_password" aria-label="Afficher le mot de passe"><i class="far fa-eye"></i></button>
+                                @error('password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="form-text" id="aide-mdp">8 caractères minimum.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password_confirmation" class="form-label">Confirmer le mot de passe</label>
+                            <div class="password-field">
+                                <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" required autocomplete="new-password">
+                                <button type="button" class="toggle-password" data-target="password_confirmation" aria-label="Afficher le mot de passe"><i class="far fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="border-top mt-4 pt-3 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">{{ $aUnMotDePasse ? 'Modifier le mot de passe' : 'Définir le mot de passe' }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @if($appareils->isNotEmpty())
+            <div class="card">
+                <div class="card-header">
+                    <h5>Appareils connectés</h5>
+                </div>
+                <ul class="list-unstyled mb-0 appareils">
+                    @foreach($appareils as $appareil)
+                        <li>
+                            <span class="stat-icon {{ $appareil->actuel ? 'tone-green' : 'tone-slate' }}" aria-hidden="true">
+                                <i class="fas {{ $appareil->mobile ? 'fa-mobile-screen' : 'fa-desktop' }}"></i>
+                            </span>
+                            <div class="min-w-0">
+                                <div class="fw-medium">{{ $appareil->navigateur }} sur {{ $appareil->systeme }}</div>
+                                <div class="small text-body-secondary">
+                                    {{ $appareil->ip }} ·
+                                    @if($appareil->actuel)
+                                        <span class="text-success fw-medium">Cet appareil</span>
+                                    @else
+                                        Actif {{ $appareil->derniere_activite->diffForHumans() }}
+                                    @endif
+                                </div>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+
+                @if($autresAppareils > 0)
+                    <div class="card-body border-top">
+                        <form method="POST" action="{{ route('settings.sessions.destroy') }}" class="row g-2 align-items-end">
+                            @csrf
+                            @method('DELETE')
+                            @if($aUnMotDePasse)
+                                <div class="col-sm">
+                                    <label for="password_session" class="form-label small">Confirmez avec votre mot de passe</label>
+                                    <input type="password" class="form-control form-control-sm @error('password_session') is-invalid @enderror" id="password_session" name="password_session" required autocomplete="current-password">
+                                    @error('password_session')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            @endif
+                            <div class="col-sm-auto">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    Déconnecter {{ $autresAppareils > 1 ? 'les ' . $autresAppareils . ' autres appareils' : 'l’autre appareil' }}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                @endif
+            </div>
+        @endif
+    </section>
+
+    <section id="donnees" class="mt-4" aria-labelledby="titre-donnees">
+        <h2 class="fs-6 text-uppercase text-body-secondary fw-semibold mb-3" id="titre-donnees">Mes données</h2>
+        <div class="card">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <div class="fw-medium">Télécharger mes données</div>
+                    <div class="small text-body-secondary">Profil, signalements, demandes et plaintes, dans un fichier lisible (JSON).</div>
+                </div>
+                <a href="{{ route('settings.donnees') }}" class="btn btn-sm btn-outline-primary">Télécharger</a>
+            </div>
+
+            @if($user->role === 'citoyen')
+                <div class="card-body border-top">
+                    <div class="fw-medium">Supprimer mon compte</div>
+                    <p class="small text-body-secondary">
+                        Vos informations personnelles sont effacées et vous ne pourrez plus vous connecter.
+                        Vos signalements restent utiles au service mais ne sont plus rattachés à votre nom.
+                        <a href="{{ route('legal.confidentialite') }}">En savoir plus</a>
+                    </p>
+                    <form method="POST" action="{{ route('settings.compte.destroy') }}" class="row g-2 align-items-end"
+                          onsubmit="return confirm('Supprimer définitivement votre compte ?')">
+                        @csrf
+                        @method('DELETE')
+                        <div class="col-sm">
+                            @if($aUnMotDePasse)
+                                <label for="password_suppression" class="form-label small">Confirmez avec votre mot de passe</label>
+                                <input type="password" class="form-control form-control-sm @error('password_suppression') is-invalid @enderror" id="password_suppression" name="password_suppression" required autocomplete="current-password">
+                                @error('password_suppression')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @else
+                                <label for="confirmation" class="form-label small">Tapez SUPPRIMER pour confirmer</label>
+                                <input type="text" class="form-control form-control-sm @error('confirmation') is-invalid @enderror" id="confirmation" name="confirmation" required autocomplete="off">
+                                @error('confirmation')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @endif
+                        </div>
+                        <div class="col-sm-auto">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer mon compte</button>
+                        </div>
+                    </form>
+                </div>
+            @endif
+        </div>
+    </section>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    // Le thème s'applique dès qu'on le choisit
+    document.querySelectorAll('#form-theme input[name="theme"]').forEach(function (radio) {
+        radio.addEventListener('change', function () { document.getElementById('form-theme').submit(); });
+    });
+</script>
+@endpush

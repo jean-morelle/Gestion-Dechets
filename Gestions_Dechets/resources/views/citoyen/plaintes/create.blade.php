@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Nouvelle plainte')
+
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
@@ -68,6 +70,10 @@
                             @enderror
                         </div>
 
+                        <x-carte.choix :latitude="old('latitude')" :longitude="old('longitude')"
+                                       label="Emplacement sur la carte (facultatif)"
+                                       aide="Si le problème concerne un lieu précis, cliquez dessus sur la carte." />
+
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="mb-1">
@@ -95,31 +101,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-3">
-                                <div class="mb-1">
-                                    <label for="latitude" class="form-label small">Latitude</label>
-                                    <input type="number" class="form-control form-control-sm @error('latitude') is-invalid @enderror" 
-                                           id="latitude" name="latitude" value="{{ old('latitude') }}" 
-                                           step="any" placeholder="Ex: 6.1378">
-                                    @error('latitude')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-3">
-                                <div class="mb-1">
-                                    <label for="longitude" class="form-label small">Longitude</label>
-                                    <input type="number" class="form-control form-control-sm @error('longitude') is-invalid @enderror" 
-                                           id="longitude" name="longitude" value="{{ old('longitude') }}" 
-                                           step="any" placeholder="Ex: 1.2123">
-                                    @error('longitude')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <div class="mb-1">
                                     <label for="contact_telephone" class="form-label small">Téléphone</label>
                                     <input type="tel" class="form-control form-control-sm @error('contact_telephone') is-invalid @enderror" 
@@ -130,8 +112,8 @@
                                     @enderror
                                 </div>
                             </div>
-                            
-                            <div class="col-md-3">
+
+                            <div class="col-md-6">
                                 <div class="mb-1">
                                     <label for="photo" class="form-label small">Photo</label>
                                     <input type="file" class="form-control form-control-sm @error('photo') is-invalid @enderror" 

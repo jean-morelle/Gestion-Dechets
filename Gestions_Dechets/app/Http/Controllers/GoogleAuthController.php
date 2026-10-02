@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleAuthController extends Controller
@@ -29,7 +31,9 @@ class GoogleAuthController extends Controller
             $user = User::where('email', $googleUser->getEmail())->first();
             
             if ($user) {
-                // L'utilisateur existe, se connecter
+                if ($user->statut !== 'actif') {
+                    return redirect()->route('login')->withErrors(['email' => 'Ce compte est suspendu ou désactivé. Contactez le service de la mairie.']);
+                }
                 Auth::login($user);
             } else {
                 // Créer un nouvel utilisateur
@@ -40,7 +44,8 @@ class GoogleAuthController extends Controller
                     'email_verified_at' => now(),
                     'role' => 'citoyen', // Rôle par défaut
                     'statut' => 'actif',
-                    'password' => bcrypt(str_random(16)), // Mot de passe aléatoire
+                    'password' => Hash::make(Str::random(40)), // inconnu de l'utilisateur : il se connecte via Google
+                    'mot_de_passe_defini' => false,
                 ]);
                 
                 Auth::login($user);
@@ -50,7 +55,10 @@ class GoogleAuthController extends Controller
             return $this->redirectToDashboard($user->role);
             
         } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Erreur lors de la connexion avec Google: ' . $e->getMessage());
+            // Le détail technique va dans les journaux, pas à l'écran
+            report($e);
+
+            return redirect()->route('login')->with('error', 'La connexion avec Google a échoué. Réessayez ou utilisez votre e-mail et mot de passe.');
         }
     }
 

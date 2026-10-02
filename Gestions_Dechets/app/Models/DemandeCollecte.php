@@ -172,6 +172,27 @@ class DemandeCollecte extends Model
         };
     }
 
+    /** Couleur de badge (classes tone-* de app.css) */
+    public function getStatutToneAttribute(): string
+    {
+        return match ($this->statut) {
+            self::STATUT_EN_ATTENTE => 'tone-amber',
+            self::STATUT_ACCEPTE, self::STATUT_EN_COURS => 'tone-blue',
+            self::STATUT_TERMINE => 'tone-green',
+            self::STATUT_REFUSE => 'tone-red',
+            default => 'tone-slate',
+        };
+    }
+
+    public function getUrgenceToneAttribute(): string
+    {
+        return match ($this->urgence) {
+            self::URGENCE_URGENTE => 'tone-red',
+            self::URGENCE_ELEVEE => 'tone-amber',
+            default => 'tone-slate',
+        };
+    }
+
     // Obtenir la classe CSS pour l'urgence
     public function getUrgenceClassAttribute()
     {

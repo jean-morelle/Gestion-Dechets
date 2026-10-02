@@ -1,72 +1,93 @@
 @extends('layouts.app')
 
-@section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                    <h6 class="card-title mb-0">Utilisateurs</h6>
-                    <select class="form-select form-select-sm" style="width: auto;">
-                        <option>Tous les rôles</option>
-                        <option>Citoyens</option>
-                        <option>Collecteurs</option>
-                        <option>Administrateurs</option>
-                    </select>
-                </div>
-                <div class="card-body py-3">
-                    @if(isset($users) && count($users) > 0)
-                    <table class="table table-hover table-sm">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Nom</th>
-                                <th>Email</th>
-                                <th>Rôle</th>
-                                <th>Quartier</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($users as $user)
-                            <tr>
-                                <td>{{ Str::limit($user->name, 25) }}</td>
-                                <td>{{ Str::limit($user->email, 30) }}</td>
-                                <td>
-                                    <span class="badge bg-{{ $user->role == 'admin' ? 'danger' : ($user->role == 'collecteur' ? 'warning' : 'info') }}">
-                                        {{ ucfirst($user->role) }}
-                                    </span>
-                                </td>
-                                <td>{{ $user->quartier ?? '-' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ $user->statut == 'actif' ? 'success' : 'secondary' }}">
-                                        {{ ucfirst($user->statut) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="{{ route('admin.utilisateurs.show', $user) }}" class="btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    @else
-                    <div class="text-center py-4">
-                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Aucun utilisateur trouvé</p>
-                    </div>
-                    @endif
+@section('title', 'Utilisateurs')
 
-                    @if(isset($users) && $users->hasPages())
-                    <div class="text-center mt-3">
-                        <a href="{{ $users->nextPageUrl() }}" class="btn btn-outline-primary">Suivant</a>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
+@php
+    $roles = \App\Http\Controllers\AdminUtilisateurController::ROLES;
+    $statuts = \App\Http\Controllers\AdminUtilisateurController::STATUTS;
+@endphp
+
+@section('content')
+<div class="page-header">
+    <div>
+        <h1>Utilisateurs</h1>
+        <p>
+            {{ $compteurs['citoyen'] ?? 0 }} citoyen{{ ($compteurs['citoyen'] ?? 0) > 1 ? 's' : '' }} ·
+            {{ $compteurs['collecteur'] ?? 0 }} collecteur{{ ($compteurs['collecteur'] ?? 0) > 1 ? 's' : '' }} ·
+            {{ $compteurs['admin'] ?? 0 }} administrateur{{ ($compteurs['admin'] ?? 0) > 1 ? 's' : '' }}
+        </p>
     </div>
+    <a href="{{ route('admin.utilisateurs.create') }}" class="btn btn-primary">
+        <i class="fas fa-user-plus me-1" aria-hidden="true"></i>Créer un compte agent
+    </a>
 </div>
+
+<form method="GET" class="row g-2 mb-3" role="search">
+    <div class="col-md-5">
+        <label for="q" class="visually-hidden">Rechercher</label>
+        <input type="search" class="form-control" id="q" name="q" value="{{ request('q') }}" placeholder="Nom, e-mail, téléphone ou quartier…">
+    </div>
+    <div class="col-6 col-md-3">
+        <label for="filtre-role" class="visually-hidden">Rôle</label>
+        <select class="form-select" id="filtre-role" name="role" onchange="this.form.submit()">
+            <option value="">Tous les rôles</option>
+            @foreach($roles as $valeur => $libelle)
+                <option value="{{ $valeur }}" @selected(request('role') === $valeur)>{{ $libelle }}s</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label for="filtre-statut" class="visually-hidden">Statut</label>
+        <select class="form-select" id="filtre-statut" name="statut" onchange="this.form.submit()">
+            <option value="">Tous</option>
+            @foreach($statuts as $valeur => $libelle)
+                <option value="{{ $valeur }}" @selected(request('statut') === $valeur)>{{ $libelle }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-md-2 d-grid">
+        <button class="btn btn-outline-secondary" type="submit">Rechercher</button>
+    </div>
+</form>
+
+<div class="card">
+    @if($utilisateurs->isEmpty())
+        <div class="empty-state">
+            <i class="fas fa-users" aria-hidden="true"></i>
+            <p>Aucun compte ne correspond à ces critères.</p>
+        </div>
+    @else
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Rôle</th>
+                        <th>Quartier</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($utilisateurs as $u)
+                        <tr>
+                            <td class="min-w-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <x-avatar :user="$u" :taille="32" />
+                                    <div class="min-w-0">
+                                        <a href="{{ route('admin.utilisateurs.show', $u) }}" class="fw-medium">{{ $u->name }}</a>
+                                        <div class="small text-body-secondary text-truncate">{{ $u->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ $roles[$u->role] ?? $u->role }}</td>
+                            <td>{{ $u->quartier ?: '—' }}</td>
+                            <td><span class="badge {{ $u->statut === 'actif' ? 'tone-green' : ($u->statut === 'suspendu' ? 'tone-amber' : 'tone-slate') }}">{{ $statuts[$u->statut] ?? $u->statut }}</span></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</div>
+<div class="mt-3">{{ $utilisateurs->links() }}</div>
 @endsection

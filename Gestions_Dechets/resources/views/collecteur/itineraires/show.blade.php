@@ -1,210 +1,231 @@
 @extends('layouts.app')
 
-@section('title', 'Détail Itinéraire')
+@section('title', $itineraire->nom)
+
+@php
+    $p = $itineraire->progression;
+    $enCours = $itineraire->statut === 'en_cours';
+    $etatCarte = fn ($c) => match ($c?->statut) { 'termine' => 'fait', 'rate' => 'rate', default => 'afaire' };
+    // Prochaine étape à traiter : la première encore « à faire », dans l'ordre de passage
+    $prochaine = $enCours
+        ? $itineraire->pointsDeCollecte->first(fn ($pt) => ($collectesParPoint[$pt->id] ?? null)?->statut === 'prevue')
+        : null;
+@endphp
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box">
-                <h4 class="page-title"><i class="fas fa-route me-2"></i>Itinéraire: {{ $itineraire->nom }}</h4>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{{ route('collecteur.itineraires.index') }}">Mes Itinéraires</a></li>
-                        <li class="breadcrumb-item active">Détail</li>
-                    </ol>
-                </nav>
-            </div>
+<div class="page-header">
+    <div>
+        <h1>{{ $itineraire->nom }} <span class="badge {{ $itineraire->statut_tone }} align-middle fs-6">{{ $itineraire->statut_label }}</span></h1>
+        <p>
+            {{ $itineraire->date_debut?->translatedFormat('l j F') }}, {{ $itineraire->heure_debut?->format('H:i') }} – {{ $itineraire->heure_fin?->format('H:i') }}
+            · {{ $p['total'] }} étape{{ $p['total'] > 1 ? 's' : '' }}
+            @if($itineraire->distance_estimee) · {{ str_replace('.', ',', (string) (float) $itineraire->distance_estimee) }} km @endif
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        @if($itineraire->statut === 'planifie')
+            <form method="POST" action="{{ route('collecteur.itineraires.demarrer', $itineraire) }}">
+                @csrf
+                <button type="submit" class="btn btn-primary"><i class="fas fa-play me-1" aria-hidden="true"></i>Démarrer la tournée</button>
+            </form>
+        @elseif($enCours)
+            <form method="POST" action="{{ route('collecteur.itineraires.terminer', $itineraire) }}"
+                  @if($p['restantes']) onsubmit="return confirm('Il reste {{ $p['restantes'] }} étape(s). Elles seront marquées « non collectées ». Terminer quand même ?')" @endif>
+                @csrf
+                <button type="submit" class="btn {{ $p['restantes'] ? 'btn-outline-success' : 'btn-success' }}"><i class="fas fa-flag-checkered me-1" aria-hidden="true"></i>Terminer la tournée</button>
+            </form>
+        @endif
+        @if(in_array($itineraire->statut, ['planifie', 'en_cours']))
+            <a href="{{ route('collecteur.incidents.create', ['itineraire_id' => $itineraire->id]) }}" class="btn btn-outline-danger">
+                <i class="fas fa-triangle-exclamation me-1" aria-hidden="true"></i>Signaler un incident
+            </a>
+        @endif
+    </div>
+</div>
+
+@if($itineraire->description)
+    <div class="alert alert-info d-flex gap-2">
+        <i class="fas fa-circle-info mt-1" aria-hidden="true"></i>
+        <div><strong>Consignes :</strong> {{ $itineraire->description }}</div>
+    </div>
+@endif
+
+@if($itineraire->statut !== 'planifie')
+    <div class="mb-3">
+        <div class="d-flex justify-content-between small mb-1">
+            <span>{{ $p['total'] - $p['restantes'] }}/{{ $p['total'] }} étapes faites</span>
+            @if($p['kg'] > 0)<span>{{ number_format($p['kg'], 0, ',', ' ') }} kg ramassés</span>@endif
+        </div>
+        <div class="progress" style="height: 8px" role="progressbar" aria-label="Avancement de la tournée" aria-valuenow="{{ $p['pourcentage'] }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar bg-success" style="width: {{ $p['pourcentage'] }}%"></div>
+        </div>
+    </div>
+@endif
+
+<div class="row g-4">
+    <div class="col-lg-7 order-2 order-lg-1">
+        <div class="card">
+            <ol class="list-unstyled mb-0 etapes-suivi">
+                @foreach($itineraire->pointsDeCollecte as $i => $point)
+                    @php
+                        $c = $collectesParPoint[$point->id] ?? null;
+                        $estProchaine = $prochaine && $prochaine->id === $point->id;
+                        $itineraireGps = 'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' . $point->latitude . ',' . $point->longitude;
+                        // Après une erreur de saisie, le formulaire concerné est rouvert
+                        $ouvrirPassage = $c && old('_etape') == $c->id && old('_action') === 'passage';
+                        $ouvrirEchec = $c && old('_etape') == $c->id && old('_action') === 'echec';
+                    @endphp
+                    <li id="etape-{{ $c?->id ?? 'p' . $point->id }}" @class(['etape-prochaine' => $estProchaine])>
+                        <span class="etape-num cp-pin-{{ $etatCarte($c) }}"><span>{{ $i + 1 }}</span></span>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="d-flex flex-wrap justify-content-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="fw-medium">{{ $point->nom }}</div>
+                                    <div class="small text-body-secondary">{{ $point->adresse }}, {{ $point->quartier }}</div>
+                                    @if($point->description)<div class="small mt-1"><i class="fas fa-circle-info text-body-secondary me-1" aria-hidden="true"></i>{{ $point->description }}</div>@endif
+                                </div>
+                                @if($c)<span class="badge {{ $c->statut_tone }} align-self-start">{{ $c->statut_label }}</span>@endif
+                            </div>
+
+                            @if($c?->statut === 'termine')
+                                <div class="small text-body-secondary mt-1">
+                                    {{ $c->heure_fin?->format('H:i') }} · {{ number_format((float) $c->quantite, 0, ',', ' ') }} kg · {{ $c->type_dechet_label }}
+                                </div>
+                            @elseif($c?->statut === 'rate')
+                                <div class="small text-danger mt-1">{{ $c->motif_echec_label }}</div>
+                            @endif
+
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <a href="{{ $itineraireGps }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-diamond-turn-right me-1" aria-hidden="true"></i>Y aller
+                                </a>
+                                @if($enCours && $c?->statut === 'prevue')
+                                    <button class="btn btn-sm btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#passage-{{ $c->id }}" aria-expanded="{{ $ouvrirPassage ? 'true' : 'false' }}" aria-controls="passage-{{ $c->id }}">
+                                        <i class="fas fa-camera me-1" aria-hidden="true"></i>Valider le passage
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#echec-{{ $c->id }}" aria-expanded="{{ $ouvrirEchec ? 'true' : 'false' }}" aria-controls="echec-{{ $c->id }}">
+                                        Non collecté
+                                    </button>
+                                @endif
+                            </div>
+
+                            @if($enCours && $c?->statut === 'prevue')
+                                {{-- Valider le passage --}}
+                                <form method="POST" action="{{ route('collecteur.collectes.passage', $c) }}" enctype="multipart/form-data"
+                                      class="collapse passage-form border rounded p-3 mt-3 @if($ouvrirPassage) show @endif" id="passage-{{ $c->id }}" data-gps>
+                                    @csrf
+                                    <input type="hidden" name="_etape" value="{{ $c->id }}">
+                                    <input type="hidden" name="_action" value="passage">
+                                    <input type="hidden" name="latitude" data-gps-lat>
+                                    <input type="hidden" name="longitude" data-gps-lng>
+                                    <input type="hidden" name="precision" data-gps-precision>
+
+                                    <div class="mb-3">
+                                        <label for="photo-{{ $c->id }}" class="form-label">Photo du point après ramassage</label>
+                                        <input type="file" class="form-control @if($ouvrirPassage) @error('photo') is-invalid @enderror @endif" id="photo-{{ $c->id }}" name="photo" accept="image/*" capture="environment" required>
+                                        @if($ouvrirPassage) @error('photo')<div class="invalid-feedback">{{ $message }}</div>@enderror @endif
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-7">
+                                            <label for="type-{{ $c->id }}" class="form-label">Type de déchet</label>
+                                            <select class="form-select" id="type-{{ $c->id }}" name="type_dechet" required>
+                                                @foreach(\App\Models\Collecte::TYPES_DECHET as $valeur => $libelle)
+                                                    <option value="{{ $valeur }}" @selected(($ouvrirPassage ? old('type_dechet') : null) === $valeur)>{{ $libelle }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-5">
+                                            <label for="quantite-{{ $c->id }}" class="form-label">Quantité (kg)</label>
+                                            <input type="number" inputmode="decimal" min="0" step="1" class="form-control @if($ouvrirPassage) @error('quantite') is-invalid @enderror @endif" id="quantite-{{ $c->id }}" name="quantite" value="{{ $ouvrirPassage ? old('quantite') : '' }}" placeholder="Estimation" required>
+                                            @if($ouvrirPassage) @error('quantite')<div class="invalid-feedback">{{ $message }}</div>@enderror @endif
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="notes-{{ $c->id }}" class="form-label">Remarque <span class="text-body-secondary fw-normal">(facultatif)</span></label>
+                                        <input type="text" class="form-control" id="notes-{{ $c->id }}" name="notes" value="{{ $ouvrirPassage ? old('notes') : '' }}" placeholder="Ex. : bac abîmé, débordement">
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                        <span class="small text-body-secondary" data-gps-statut aria-live="polite"><i class="fas fa-location-crosshairs me-1" aria-hidden="true"></i>Localisation…</span>
+                                        <button type="submit" class="btn btn-success">Enregistrer le passage</button>
+                                    </div>
+                                </form>
+
+                                {{-- Point non collecté --}}
+                                <form method="POST" action="{{ route('collecteur.collectes.echec', $c) }}"
+                                      class="collapse border rounded p-3 mt-3 @if($ouvrirEchec) show @endif" id="echec-{{ $c->id }}">
+                                    @csrf
+                                    <input type="hidden" name="_etape" value="{{ $c->id }}">
+                                    <input type="hidden" name="_action" value="echec">
+                                    <fieldset class="mb-3">
+                                        <legend class="form-label fs-6">Pourquoi ce point n’a-t-il pas été collecté ?</legend>
+                                        @foreach(\App\Models\Collecte::MOTIFS_ECHEC as $valeur => $libelle)
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="motif_echec" id="motif-{{ $c->id }}-{{ $valeur }}" value="{{ $valeur }}" @checked($ouvrirEchec && old('motif_echec') === $valeur) required>
+                                                <label class="form-check-label" for="motif-{{ $c->id }}-{{ $valeur }}">{{ $libelle }}</label>
+                                            </div>
+                                        @endforeach
+                                        @if($ouvrirEchec) @error('motif_echec')<div class="text-danger small">{{ $message }}</div>@enderror @endif
+                                    </fieldset>
+                                    <div class="mb-3">
+                                        <label for="precision-{{ $c->id }}" class="form-label">Précision <span class="text-body-secondary fw-normal">(obligatoire pour « Autre raison »)</span></label>
+                                        <input type="text" class="form-control @if($ouvrirEchec) @error('notes') is-invalid @enderror @endif" id="precision-{{ $c->id }}" name="notes" value="{{ $ouvrirEchec ? old('notes') : '' }}">
+                                        @if($ouvrirEchec) @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror @endif
+                                    </div>
+                                    <div class="text-end">
+                                        <button type="submit" class="btn btn-danger">Confirmer</button>
+                                    </div>
+                                </form>
+                            @endif
+                        </div>
+                    </li>
+                @endforeach
+            </ol>
         </div>
     </div>
 
-    <div class="row g-3">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Informations</h5>
-                    <div>
-                        @php($nextCollecte = collect($collectes ?? [])->first(fn($c) => ($c->statut ?? null) !== 'termine'))
-                        @if(isset($nextCollecte->pointDeCollecte) && $nextCollecte->pointDeCollecte->latitude && $nextCollecte->pointDeCollecte->longitude)
-                            @php($dest = $nextCollecte->pointDeCollecte->latitude . ',' . $nextCollecte->pointDeCollecte->longitude)
-                            <a href="https://www.google.com/maps/dir/?api=1&destination={{ $dest }}&travelmode=driving" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary me-2">
-                                Naviguer vers le prochain point
-                            </a>
-                        @endif
-                        <form action="{{ route('collecteur.itineraires.demarrer', $itineraire->id) }}" method="POST" class="d-inline">
-                            @csrf
-                            <button class="btn btn-sm btn-primary" {{ $itineraire->statut === 'en_cours' ? 'disabled' : '' }}>
-                                Démarrer
-                            </button>
-                        </form>
-                        <form action="{{ route('collecteur.itineraires.terminer', $itineraire->id) }}" method="POST" class="d-inline ms-2">
-                            @csrf
-                            <button class="btn btn-sm btn-success" {{ $itineraire->statut === 'termine' ? 'disabled' : '' }}>
-                                Terminer
-                            </button>
-                        </form>
-                        <a href="{{ route('collecteur.incidents.create', ['itineraire_id' => $itineraire->id]) }}" class="btn btn-sm btn-outline-danger ms-2">
-                            Signaler un incident
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Type:</strong> {{ $itineraire->type_label ?? ucfirst($itineraire->type) }}</p>
-                            <p><strong>Statut:</strong> <span class="badge {{ $itineraire->statut_class ?? 'bg-info' }}">{{ $itineraire->statut_label ?? ucfirst($itineraire->statut) }}</span></p>
-                            <p><strong>Date:</strong> {{ $itineraire->date_debut?->format('d/m/Y') }} - {{ $itineraire->date_fin?->format('d/m/Y') }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Heure:</strong> {{ $itineraire->heure_debut?->format('H:i') }} - {{ $itineraire->heure_fin?->format('H:i') }}</p>
-                            <p><strong>Distance estimée:</strong> {{ $itineraire->distance_estimee ?? 'N/A' }} km</p>
-                            <p><strong>Durée estimée:</strong> {{ $itineraire->duree_estimee ?? 'N/A' }} min</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            @php($activeTab = request('tab', 'points'))
-            <ul class="nav nav-tabs mt-3" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link {{ $activeTab==='points' ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['tab' => 'points']) }}">Points</a>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <a class="nav-link {{ $activeTab==='carte' ? 'active' : '' }}" href="{{ request()->fullUrlWithQuery(['tab' => 'carte']) }}">Carte</a>
-                </li>
-            </ul>
-
-            <div class="card border-top-0">
-                <div class="card-body">
-                    @if($activeTab==='points')
-                        @forelse($collectes ?? [] as $collecte)
-                            <div class="d-flex align-items-center border rounded p-2 mb-2">
-                                <div class="me-3">
-                                    <span class="badge {{ $collecte->statut_class }}">{{ $collecte->statut_label }}</span>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-semibold">{{ $collecte->type_dechet_label ?? 'Collecte' }} — {{ $collecte->pointDeCollecte->adresse ?? 'Point' }}</div>
-                                    <small class="text-muted">{{ $collecte->date_collecte?->format('d/m/Y') }} {{ $collecte->heure_debut?->format('H:i') }} - {{ $collecte->heure_fin?->format('H:i') }}</small>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    @if(($collecte->pointDeCollecte->latitude ?? null) && ($collecte->pointDeCollecte->longitude ?? null))
-                                        @php($dest = $collecte->pointDeCollecte->latitude . ',' . $collecte->pointDeCollecte->longitude)
-                                        <a class="btn btn-sm btn-outline-primary" href="https://www.google.com/maps/dir/?api=1&destination={{ $dest }}&travelmode=driving" target="_blank" rel="noopener" title="Naviguer">
-                                            <i class="fas fa-location-arrow"></i>
-                                        </a>
-                                    @endif
-                                    <a class="btn btn-sm btn-outline-secondary" href="{{ route('collecteur.collectes.show', $collecte->id) }}">Ouvrir</a>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-muted mb-0">Aucune collecte listée pour cet itinéraire.</p>
-                        @endforelse
-                    @else
-                        <div class="d-flex justify-content-end mb-2">
-                            <button id="btn_nav_full" type="button" class="btn btn-sm btn-outline-primary">
-                                Naviguer toute la tournée
-                            </button>
-                        </div>
-                        <div id="map_itineraire" style="height: 60vh;" class="rounded border"></div>
-                        <script>
-                        (function(){
-                            const points = @json(($pointsCollecte ?? collect())->map(function($p){
-                                return ['lat' => (float) $p->latitude, 'lng' => (float) $p->longitude, 'label' => $p->adresse];
-                            }));
-                            if (!points.length) return;
-                            window.itinPoints = points; // pour le bouton navigation
-
-                            const apiKey = "{{ config('services.google_maps.key') }}";
-                            const callbackName = 'initItineraireMap_' + Math.random().toString(36).slice(2);
-
-                            window[callbackName] = function(){
-                                const map = new google.maps.Map(document.getElementById('map_itineraire'), {
-                                    zoom: 13,
-                                    center: points[0]
-                                });
-
-                                const path = points.map(p => ({ lat: p.lat, lng: p.lng }));
-                                const polyline = new google.maps.Polyline({
-                                    path,
-                                    geodesic: true,
-                                    strokeColor: '#0d6efd',
-                                    strokeOpacity: 0.9,
-                                    strokeWeight: 5
-                                });
-                                polyline.setMap(map);
-
-                                const bounds = new google.maps.LatLngBounds();
-                                points.forEach((p, idx) => {
-                                    const marker = new google.maps.Marker({ position: p, map, label: String(idx+1) });
-                                    const info = new google.maps.InfoWindow({ content: (idx+1)+'. '+(p.label||'Point') });
-                                    marker.addListener('click', () => info.open({ anchor: marker, map }));
-                                    bounds.extend(p);
-                                });
-                                map.fitBounds(bounds, 50);
-                            };
-
-                            const script = document.createElement('script');
-                            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${callbackName}`;
-                            script.async = true;
-                            document.head.appendChild(script);
-
-                            // Handler bouton navigation complète (cap waypoints 23)
-                            document.getElementById('btn_nav_full').addEventListener('click', function(){
-                                const pts = window.itinPoints || [];
-                                if (!pts.length) { window.open('https://www.google.com/maps', '_blank'); return; }
-                                const buildUrl = function(origin){
-                                    const dest = pts[pts.length-1].lat + ',' + pts[pts.length-1].lng;
-                                    const intermediates = pts.slice(0, -1); // sans destination
-                                    // Google URL Directions limite à 23 waypoints max
-                                    const maxWaypoints = 23;
-                                    const waypointsList = intermediates.slice(0, maxWaypoints).map(p => p.lat + ',' + p.lng);
-                                    const waypointsParam = waypointsList.join('|');
-                                    const base = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
-                                    return origin
-                                        ? base + `&origin=${encodeURIComponent(origin)}&waypoints=${encodeURIComponent(waypointsParam)}`
-                                        : base + `&waypoints=${encodeURIComponent(waypointsParam)}`;
-                                };
-
-                                if (!navigator.geolocation) {
-                                    window.open(buildUrl(null), '_blank');
-                                    return;
-                                }
-                                navigator.geolocation.getCurrentPosition(function(pos){
-                                    const origin = pos.coords.latitude + ',' + pos.coords.longitude;
-                                    window.open(buildUrl(origin), '_blank');
-                                }, function(){
-                                    window.open(buildUrl(null), '_blank');
-                                }, { enableHighAccuracy: true, timeout: 8000 });
-                            });
-                        })();
-                        </script>
-                    @endif
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header"><h5 class="card-title mb-0">Actions rapides</h5></div>
-                <div class="card-body">
-                    <a href="{{ route('collecteur.incidents.create', ['itineraire_id' => $itineraire->id]) }}" class="btn btn-outline-danger w-100 mb-2">
-                        Signaler un incident
-                    </a>
-                    <a href="{{ route('collecteur.itineraires.index') }}" class="btn btn-outline-secondary w-100">Retour à la liste</a>
-                </div>
-            </div>
-        </div>
+    <div class="col-lg-5 order-1 order-lg-2">
+        <x-carte.points relier numeroter hauteur="320px"
+            :points="$itineraire->pointsDeCollecte->map(fn ($pt) => [
+                'lat' => $pt->latitude, 'lng' => $pt->longitude, 'nom' => $pt->nom, 'detail' => $pt->adresse,
+                'etat' => $etatCarte($collectesParPoint[$pt->id] ?? null),
+            ])" />
     </div>
 </div>
 @endsection
 
+@push('scripts')
+<script>
+    // Position GPS relevée à l'ouverture du formulaire de passage (preuve de présence)
+    document.querySelectorAll('form[data-gps]').forEach(function (form) {
+        var statut = form.querySelector('[data-gps-statut]');
+        var releve = false;
 
+        function localiser() {
+            if (releve) return;
+            releve = true;
+            if (!navigator.geolocation) {
+                statut.textContent = 'GPS indisponible : le passage sera enregistré sans position.';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(function (pos) {
+                form.querySelector('[data-gps-lat]').value = pos.coords.latitude;
+                form.querySelector('[data-gps-lng]').value = pos.coords.longitude;
+                form.querySelector('[data-gps-precision]').value = Math.round(pos.coords.accuracy);
+                statut.innerHTML = '<i class="fas fa-location-crosshairs me-1 text-success" aria-hidden="true"></i>Position relevée (± ' + Math.round(pos.coords.accuracy) + ' m)';
+            }, function () {
+                releve = false;
+                statut.textContent = 'Position non disponible : le passage sera enregistré sans GPS.';
+            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+        }
 
+        form.addEventListener('show.bs.collapse', localiser);
+        if (form.classList.contains('show')) localiser();
+    });
 
-
-
-
-
-
-
-
+    // Ouvrir directement l'étape concernée après un enregistrement
+    if (location.hash) {
+        var cible = document.querySelector(location.hash);
+        if (cible) cible.scrollIntoView({ block: 'center' });
+    }
+</script>
+@endpush

@@ -5,29 +5,39 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Passage d'un collecteur à un point de collecte, au cours d'une tournée.
+ * Créée « prévue » au démarrage de la tournée, puis « terminée » (passage
+ * validé avec photo) ou « ratée » (point non collecté, avec un motif).
+ */
 class Collecte extends Model
 {
     use HasFactory;
 
-    // Constantes pour les statuts
     const STATUT_PREVUE = 'prevue';
     const STATUT_EN_COURS = 'en_cours';
     const STATUT_TERMINE = 'termine';
     const STATUT_RATE = 'rate';
     const STATUT_ANNULE = 'annule';
 
-    // Constantes pour les types de déchets collectés
-    const TYPE_DECHET_MENAGER = 'dechet_menager';
-    const TYPE_DECHET_VERT = 'dechet_vert';
-    const TYPE_DECHET_ENCOMBRANT = 'encombrant';
-    const TYPE_DECHET_DANGEREUX = 'dechet_dangereux';
-    const TYPE_DECHET_RECYCLABLE = 'dechet_recyclable';
+    const TYPES_DECHET = [
+        'dechet_menager' => 'Ordures ménagères',
+        'dechet_recyclable' => 'Recyclables',
+        'dechet_vert' => 'Déchets verts',
+        'encombrant' => 'Encombrants',
+        'dechet_dangereux' => 'Déchets dangereux',
+    ];
 
-    // Constantes pour les unités de mesure
-    const UNITE_KG = 'kg';
-    const UNITE_LITRES = 'litres';
-    const UNITE_UNITE = 'unite';
-    const UNITE_M3 = 'm3';
+    const MOTIFS_ECHEC = [
+        'acces_impossible' => 'Accès impossible (rue bloquée, inondée…)',
+        'point_vide' => 'Rien à collecter',
+        'vehicule_plein' => 'Véhicule plein',
+        'dechets_non_conformes' => 'Déchets non conformes (dangereux, mal triés)',
+        'autre' => 'Autre raison',
+    ];
+
+    /** Au-delà de cet écart, le passage est enregistré mais signalé à l'administration */
+    const TOLERANCE_GPS_METRES = 200;
 
     protected $fillable = [
         'itineraire_id',
@@ -41,16 +51,15 @@ class Collecte extends Model
         'date_collecte',
         'heure_debut',
         'heure_fin',
-        'duree_collecte',
-        'distance_collecte',
+        'latitude_fin',
+        'longitude_fin',
+        'precision_gps',
+        'distance_point',
+        'photo_validation',
         'notes',
-        'photo_avant',
-        'photo_apres',
+        'motif_echec',
+        'temps_collecte',
         'validation_gps',
-        'latitude',
-        'longitude',
-        'created_at',
-        'updated_at'
     ];
 
     protected $casts = [
@@ -58,14 +67,11 @@ class Collecte extends Model
         'heure_debut' => 'datetime',
         'heure_fin' => 'datetime',
         'quantite' => 'decimal:2',
-        'duree_collecte' => 'integer',
-        'distance_collecte' => 'decimal:2',
-        'latitude' => 'decimal:8',
-        'longitude' => 'decimal:8',
-        'validation_gps' => 'boolean'
+        'latitude_fin' => 'float',
+        'longitude_fin' => 'float',
+        'validation_gps' => 'boolean',
     ];
 
-    // Relations
     public function itineraire()
     {
         return $this->belongsTo(Itineraire::class);
@@ -86,147 +92,48 @@ class Collecte extends Model
         return $this->belongsTo(Signalement::class);
     }
 
-    public function incidents()
+    public function estTraitee(): bool
     {
-        return $this->hasMany(Incident::class);
+        return in_array($this->statut, [self::STATUT_TERMINE, self::STATUT_RATE, self::STATUT_ANNULE], true);
     }
 
-    // Accesseurs pour les libellés
-    public function getStatutLabelAttribute()
+    public function getStatutLabelAttribute(): string
     {
-        return match($this->statut) {
-            self::STATUT_PREVUE => 'Prévue',
+        return match ($this->statut) {
+            self::STATUT_PREVUE => 'À faire',
             self::STATUT_EN_COURS => 'En cours',
-            self::STATUT_TERMINE => 'Terminée',
-            self::STATUT_RATE => 'Ratée',
-            self::STATUT_ANNULE => 'Annulée',
-            default => 'Non défini'
+            self::STATUT_TERMINE => 'Collecté',
+            self::STATUT_RATE => 'Non collecté',
+            self::STATUT_ANNULE => 'Annulé',
+            default => 'Inconnu',
         };
     }
 
-    public function getStatutClassAttribute()
+    /** Couleur de badge (classes tone-* de app.css) */
+    public function getStatutToneAttribute(): string
     {
-        return match($this->statut) {
-            self::STATUT_PREVUE => 'badge bg-info',
-            self::STATUT_EN_COURS => 'badge bg-primary',
-            self::STATUT_TERMINE => 'badge bg-success',
-            self::STATUT_RATE => 'badge bg-warning',
-            self::STATUT_ANNULE => 'badge bg-danger',
-            default => 'badge bg-secondary'
+        return match ($this->statut) {
+            self::STATUT_TERMINE => 'tone-green',
+            self::STATUT_RATE => 'tone-red',
+            self::STATUT_EN_COURS => 'tone-blue',
+            self::STATUT_PREVUE => 'tone-amber',
+            default => 'tone-slate',
         };
     }
 
-    public function getTypeDechetLabelAttribute()
+    public function getTypeDechetLabelAttribute(): ?string
     {
-        return match($this->type_dechet) {
-            self::TYPE_DECHET_MENAGER => 'Déchets ménagers',
-            self::TYPE_DECHET_VERT => 'Déchets verts',
-            self::TYPE_DECHET_ENCOMBRANT => 'Encombrants',
-            self::TYPE_DECHET_DANGEREUX => 'Déchets dangereux',
-            self::TYPE_DECHET_RECYCLABLE => 'Recyclables',
-            default => 'Non spécifié'
-        };
+        return self::TYPES_DECHET[$this->type_dechet] ?? null;
     }
 
-    public function getUniteMesureLabelAttribute()
+    public function getMotifEchecLabelAttribute(): ?string
     {
-        return match($this->unite_mesure) {
-            self::UNITE_KG => 'Kilogrammes',
-            self::UNITE_LITRES => 'Litres',
-            self::UNITE_UNITE => 'Unités',
-            self::UNITE_M3 => 'Mètres cubes',
-            default => 'Non spécifiée'
-        };
+        return self::MOTIFS_ECHEC[$this->motif_echec] ?? $this->motif_echec;
     }
 
-    // Méthodes utilitaires
-    public function estEnCours()
+    /** Le passage a-t-il été validé loin du point prévu ? */
+    public function getEcartGpsSuspectAttribute(): bool
     {
-        return $this->statut === self::STATUT_EN_COURS;
-    }
-
-    public function estTerminee()
-    {
-        return $this->statut === self::STATUT_TERMINE;
-    }
-
-    public function estAnnulee()
-    {
-        return $this->statut === self::STATUT_ANNULE;
-    }
-
-    public function peutEtreModifiee()
-    {
-        return $this->statut === self::STATUT_PREVUE;
-    }
-
-    public function demarrer()
-    {
-        $this->update([
-            'statut' => self::STATUT_EN_COURS,
-            'heure_debut' => now()
-        ]);
-    }
-
-    public function terminer()
-    {
-        $this->update([
-            'statut' => self::STATUT_TERMINE,
-            'heure_fin' => now(),
-            'duree_collecte' => $this->calculerDuree()
-        ]);
-    }
-
-    public function annuler($raison = null)
-    {
-        $this->update([
-            'statut' => self::STATUT_ANNULE,
-            'notes' => $raison ? $this->notes . "\nAnnulée: " . $raison : $this->notes
-        ]);
-    }
-
-    public function marquerRatee($raison = null)
-    {
-        $this->update([
-            'statut' => self::STATUT_RATE,
-            'notes' => $raison ? $this->notes . "\nRatée: " . $raison : $this->notes
-        ]);
-    }
-
-    public function calculerDuree()
-    {
-        if ($this->heure_debut && $this->heure_fin) {
-            return $this->heure_debut->diffInMinutes($this->heure_fin);
-        }
-        return null;
-    }
-
-    public function calculerDistance()
-    {
-        // Logique pour calculer la distance parcourue
-        return $this->distance_collecte;
-    }
-
-    public function validerGPS($latitude, $longitude)
-    {
-        $this->update([
-            'validation_gps' => true,
-            'latitude' => $latitude,
-            'longitude' => $longitude
-        ]);
-    }
-
-    // Obtenir les statistiques d'une collecte
-    public function getStatistiques()
-    {
-        return [
-            'duree_collecte' => $this->duree_collecte,
-            'distance_collecte' => $this->distance_collecte,
-            'quantite_collectee' => $this->quantite,
-            'type_dechet' => $this->type_dechet_label,
-            'statut' => $this->statut_label,
-            'validation_gps' => $this->validation_gps,
-            'incidents' => $this->incidents,
-        ];
+        return $this->distance_point !== null && $this->distance_point > self::TOLERANCE_GPS_METRES;
     }
 }

@@ -67,9 +67,9 @@ class Incident extends Model
     {
         $labels = [
             'signale' => 'Signalé',
-            'en_cours' => 'En cours',
+            'en_cours' => 'Pris en charge',
             'resolu' => 'Résolu',
-            'annule' => 'Annulé'
+            'annule' => 'Sans suite'
         ];
         return $labels[$this->statut] ?? ucfirst($this->statut);
     }

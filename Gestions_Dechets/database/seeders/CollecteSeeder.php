@@ -2,159 +2,53 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Collecte;
-use App\Models\User;
-use App\Models\PointDeCollecte;
 use App\Models\Itineraire;
+use App\Models\PointDeCollecte;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 
+/**
+ * Données de démonstration : quelques points de collecte et une tournée
+ * planifiée pour le collecteur de test. Les collectes sont créées par
+ * l'application quand le collecteur démarre la tournée.
+ */
 class CollecteSeeder extends Seeder
 {
-    /**
-     * Run the database seeder.
-     */
     public function run(): void
     {
-        // Récupérer un collecteur
         $collecteur = User::where('role', 'collecteur')->first();
-        
-        if (!$collecteur) {
-            $this->command->error('Aucun collecteur trouvé. Créez d\'abord un utilisateur avec le rôle collecteur.');
-            return;
-        }
-
-        // Récupérer un administrateur
         $admin = User::where('role', 'admin')->first();
-        
-        if (!$admin) {
-            $this->command->error('Aucun administrateur trouvé. Créez d\'abord un utilisateur avec le rôle admin.');
+
+        if (! $collecteur || ! $admin) {
+            $this->command->error('Il faut un collecteur et un administrateur (AdminUserSeeder).');
+
             return;
         }
 
-        // Créer quelques points de collecte
-        $pointsDeCollecte = [
-            [
-                'nom' => 'Point de collecte Centre-ville',
-                'adresse' => '123 Avenue de la République, Lomé',
-                'quartier' => 'Centre-ville',
-                'latitude' => 6.1378,
-                'longitude' => 1.2123,
-                'type' => 'public',
-                'statut' => 'actif'
-            ],
-            [
-                'nom' => 'Point de collecte Adidogomé',
-                'adresse' => '456 Rue du Marché, Adidogomé',
-                'quartier' => 'Adidogomé',
-                'latitude' => 6.1456,
-                'longitude' => 1.2234,
-                'type' => 'public',
-                'statut' => 'actif'
-            ],
-            [
-                'nom' => 'Point de collecte Bè',
-                'adresse' => '789 Boulevard de la Paix, Bè',
-                'quartier' => 'Bè',
-                'latitude' => 6.1234,
-                'longitude' => 1.2345,
-                'type' => 'public',
-                'statut' => 'actif'
-            ]
-        ];
+        $points = collect([
+            ['nom' => 'Bac du Grand Marché', 'adresse' => 'Rue du Grand Marché', 'quartier' => 'Centre-ville', 'latitude' => 6.1307, 'longitude' => 1.2229, 'type' => 'commercial'],
+            ['nom' => 'Bac de la place de l’Indépendance', 'adresse' => 'Boulevard du 13 Janvier', 'quartier' => 'Centre-ville', 'latitude' => 6.1336, 'longitude' => 1.2205, 'type' => 'public'],
+            ['nom' => 'Dépôt de Nyékonakpoè', 'adresse' => 'Rue de Nyékonakpoè', 'quartier' => 'Nyékonakpoè', 'latitude' => 6.1335, 'longitude' => 1.2085, 'type' => 'public'],
+            ['nom' => 'Bac de Kodjoviakopé', 'adresse' => 'Rue de Kodjoviakopé', 'quartier' => 'Kodjoviakopé', 'latitude' => 6.1300, 'longitude' => 1.2000, 'type' => 'public'],
+        ])->map(fn ($p) => PointDeCollecte::firstOrCreate(['nom' => $p['nom']], $p + ['statut' => PointDeCollecte::STATUT_ACTIF]));
 
-        foreach ($pointsDeCollecte as $pointData) {
-            $point = PointDeCollecte::firstOrCreate(
-                ['adresse' => $pointData['adresse']],
-                $pointData
-            );
-        }
-
-        // Créer un itinéraire
-        $itineraire = Itineraire::firstOrCreate(
+        $tournee = Itineraire::firstOrCreate(
+            ['nom' => 'Centre-ville – tournée du matin', 'collecteur_id' => $collecteur->id],
             [
-                'nom' => 'Tournée matinale Centre-ville',
-                'collecteur_id' => $collecteur->id
-            ],
-            [
-                'nom' => 'Tournée matinale Centre-ville',
-                'collecteur_id' => $collecteur->id,
                 'admin_id' => $admin->id,
-                'type' => 'quotidien',
-                'date_debut' => now()->format('Y-m-d'),
-                'date_fin' => now()->addDays(7)->format('Y-m-d'),
-                'heure_debut' => '08:00',
-                'heure_fin' => '12:00',
-                'description' => 'Collecte quotidienne dans le centre-ville',
-                'statut' => 'planifie'
+                'type' => Itineraire::TYPE_QUOTIDIEN,
+                'date_debut' => today(),
+                'heure_debut' => '07:00',
+                'heure_fin' => '11:00',
+                'description' => 'Passer au Grand Marché avant l’ouverture des étals.',
+                'statut' => Itineraire::STATUT_PLANIFIE,
             ]
         );
 
-        // Récupérer les points de collecte créés
-        $points = PointDeCollecte::all();
-        
-        if ($points->isEmpty()) {
-            $this->command->error('Aucun point de collecte créé.');
-            return;
+        if ($tournee->wasRecentlyCreated) {
+            $tournee->definirEtapes($points->pluck('id')->all());
         }
 
-        // Créer des collectes
-        $collectes = [
-            [
-                'collecteur_id' => $collecteur->id,
-                'point_collecte_id' => $points[0]->id,
-                'itineraire_id' => $itineraire->id,
-                'type_dechet' => 'dechet_menager',
-                'quantite' => 150.5,
-                'statut' => 'prevue',
-                'date_collecte' => now()->addDay()->format('Y-m-d'),
-                'notes' => 'Collecte normale des déchets ménagers'
-            ],
-            [
-                'collecteur_id' => $collecteur->id,
-                'point_collecte_id' => $points[1]->id ?? $points[0]->id,
-                'itineraire_id' => $itineraire->id,
-                'type_dechet' => 'encombrant',
-                'quantite' => 75.0,
-                'statut' => 'en_cours',
-                'date_collecte' => now()->format('Y-m-d'),
-                'notes' => 'Meubles et électroménager à collecter'
-            ],
-            [
-                'collecteur_id' => $collecteur->id,
-                'point_collecte_id' => $points[2]->id ?? $points[0]->id,
-                'itineraire_id' => $itineraire->id,
-                'type_dechet' => 'dechet_vert',
-                'quantite' => 200.0,
-                'statut' => 'termine',
-                'date_collecte' => now()->subDay()->format('Y-m-d'),
-                'notes' => 'Collecte de déchets verts terminée avec succès'
-            ],
-            [
-                'collecteur_id' => $collecteur->id,
-                'point_collecte_id' => $points[0]->id,
-                'itineraire_id' => $itineraire->id,
-                'type_dechet' => 'dechet_recyclable',
-                'quantite' => 100.0,
-                'statut' => 'prevue',
-                'date_collecte' => now()->addDays(2)->format('Y-m-d'),
-                'notes' => 'Collecte des recyclables programmée'
-            ],
-            [
-                'collecteur_id' => $collecteur->id,
-                'point_collecte_id' => $points[1]->id ?? $points[0]->id,
-                'itineraire_id' => $itineraire->id,
-                'type_dechet' => 'dechet_dangereux',
-                'quantite' => 25.0,
-                'statut' => 'en_cours',
-                'date_collecte' => now()->format('Y-m-d'),
-                'notes' => 'ATTENTION: Déchets dangereux - nécessite précautions'
-            ]
-        ];
-
-        foreach ($collectes as $collecteData) {
-            Collecte::create($collecteData);
-        }
-
-        $this->command->info('Collectes créées avec succès pour le collecteur: ' . $collecteur->name);
+        $this->command->info('Tournée de démonstration prête pour ' . $collecteur->name . '.');
     }
 }

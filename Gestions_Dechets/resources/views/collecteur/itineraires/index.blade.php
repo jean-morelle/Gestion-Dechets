@@ -1,67 +1,62 @@
 @extends('layouts.app')
 
-@section('title', __('routes.my_routes') ?? 'Mes Itinéraires')
+@section('title', 'Mes tournées')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box">
-                <h4 class="page-title"><i class="fas fa-route me-2"></i>Mes Itinéraires</h4>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-3">
-        @forelse(($itineraires ?? []) as $itineraire)
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title mb-0">{{ $itineraire->nom }}</h5>
-                            <span class="badge {{ $itineraire->statut_class ?? 'bg-info' }}">{{ $itineraire->statut_label ?? ucfirst($itineraire->statut) }}</span>
-                        </div>
-                        <p class="text-muted mb-1">Type: {{ $itineraire->type_label ?? ucfirst($itineraire->type) }}</p>
-                        <p class="text-muted mb-1">Dates: {{ $itineraire->date_debut?->format('d/m/Y') }} - {{ $itineraire->date_fin?->format('d/m/Y') }}</p>
-                        <p class="text-muted">Heures: {{ $itineraire->heure_debut?->format('H:i') }} - {{ $itineraire->heure_fin?->format('H:i') }}</p>
-                    </div>
-                    <div class="card-footer bg-transparent border-0 d-flex gap-2">
-                        <a href="{{ route('collecteur.itineraires.show', $itineraire->id) }}" class="btn btn-outline-primary btn-sm">Ouvrir</a>
-                        <form action="{{ route('collecteur.itineraires.demarrer', $itineraire->id) }}" method="POST">
-                            @csrf
-                            <button class="btn btn-primary btn-sm" {{ $itineraire->statut === 'en_cours' ? 'disabled' : '' }}>Démarrer</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        @empty
-            <div class="col-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Aucun itinéraire pour l'instant.
-                    <br>
-                    <small class="text-muted">
-                        Les itinéraires vous seront assignés par l'administrateur.
-                    </small>
-                </div>
-            </div>
-        @endforelse
+<div class="page-header">
+    <div>
+        <h1>Mes tournées</h1>
+        <p>Les tournées que l’administration vous a confiées.</p>
     </div>
 </div>
+
+<ul class="nav nav-pills mb-3 small">
+    @foreach(['' => 'À faire', 'termine' => 'Terminées'] as $valeur => $libelle)
+        <li class="nav-item">
+            <a class="nav-link {{ request('statut', '') === $valeur ? 'active' : '' }}" href="{{ route('collecteur.itineraires.index', array_filter(['statut' => $valeur])) }}">{{ $libelle }}</a>
+        </li>
+    @endforeach
+</ul>
+
+@if($itineraires->isEmpty())
+    <div class="card">
+        <div class="empty-state">
+            <i class="fas fa-route" aria-hidden="true"></i>
+            <p>{{ request('statut') ? 'Aucune tournée terminée pour l’instant.' : 'Aucune tournée à faire. Les nouvelles tournées apparaîtront ici dès que l’administration vous les aura confiées.' }}</p>
+        </div>
+    </div>
+@else
+    <div class="row g-3">
+        @foreach($itineraires as $itineraire)
+            @php
+                $p = $itineraire->progression;
+            @endphp
+            <div class="col-md-6 col-xl-4">
+                <a href="{{ route('collecteur.itineraires.show', $itineraire) }}" class="card h-100 text-decoration-none text-body tournee-carte {{ $itineraire->statut === 'en_cours' ? 'border-primary' : '' }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h2 class="fs-6 fw-semibold mb-0">{{ $itineraire->nom }}</h2>
+                            <span class="badge {{ $itineraire->statut_tone }}">{{ $itineraire->statut_label }}</span>
+                        </div>
+                        <div class="small text-body-secondary">
+                            <i class="far fa-calendar me-1" aria-hidden="true"></i>{{ $itineraire->date_debut?->translatedFormat('l j F') }},
+                            {{ $itineraire->heure_debut?->format('H:i') }} – {{ $itineraire->heure_fin?->format('H:i') }}
+                        </div>
+                        <div class="small text-body-secondary">
+                            <i class="fas fa-location-dot me-1" aria-hidden="true"></i>{{ $p['total'] }} étape{{ $p['total'] > 1 ? 's' : '' }}
+                            @if($itineraire->distance_estimee) · {{ str_replace('.', ',', (string) (float) $itineraire->distance_estimee) }} km @endif
+                        </div>
+                        @if($itineraire->statut !== 'planifie')
+                            <div class="progress mt-3" style="height: 6px" role="progressbar" aria-label="Avancement" aria-valuenow="{{ $p['pourcentage'] }}" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar bg-success" style="width: {{ $p['pourcentage'] }}%"></div>
+                            </div>
+                            <div class="small text-body-secondary mt-1">{{ $p['total'] - $p['restantes'] }}/{{ $p['total'] }} étapes faites</div>
+                        @endif
+                    </div>
+                </a>
+            </div>
+        @endforeach
+    </div>
+    <div class="mt-3">{{ $itineraires->links() }}</div>
+@endif
 @endsection
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

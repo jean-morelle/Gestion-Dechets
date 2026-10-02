@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Itineraire;
 use App\Models\Collecte;
-use App\Models\PointDeCollecte;
 use App\Models\Incident;
+use App\Models\Itineraire;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class CollecteurController extends Controller
 {
@@ -27,7 +25,7 @@ class CollecteurController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        
+
         $statistiques = [
             'itineraires' => [
                 'total' => $user->itineraires()->count(),
@@ -36,7 +34,8 @@ class CollecteurController extends Controller
             ],
             'collectes' => [
                 'total' => $user->collectes()->count(),
-                'en_cours' => $user->collectes()->where('statut', 'en_cours')->count(),
+                'en_cours' => $user->collectes()->where('statut', Collecte::STATUT_PREVUE)
+                    ->whereHas('itineraire', fn ($q) => $q->where('statut', Itineraire::STATUT_EN_COURS))->count(),
                 'terminees' => $user->collectes()->where('statut', 'termine')->count(),
                 'ratees' => $user->collectes()->where('statut', 'rate')->count(),
             ],
@@ -45,14 +44,19 @@ class CollecteurController extends Controller
             ]
         ];
 
-        $itinerairesRecents = $user->itineraires()->latest()->limit(5)->get();
-        $collectesRecentes = $user->collectes()->latest()->limit(5)->get();
+        // Tournées à faire en priorité : celle en cours d'abord, puis les prochaines planifiées
+        $itinerairesRecents = $user->itineraires()
+            ->whereIn('statut', ['en_cours', 'planifie'])
+            ->orderByRaw("CASE WHEN statut = 'en_cours' THEN 0 ELSE 1 END")
+            ->orderBy('date_debut')
+            ->limit(5)
+            ->get();
+        $collectesRecentes = $user->collectes()->with('pointDeCollecte')->latest()->limit(5)->get();
         $collectesEnCours = $user->collectes()->where('statut', 'en_cours')
                                       ->with(['pointDeCollecte', 'itineraire'])
                                       ->latest()
                                       ->get();
 
-        // Récupérer les campagnes récentes
         $campagnesRecentes = \App\Models\Campagne::visible()
             ->orderBy('created_at', 'desc')
             ->limit(3)
@@ -62,381 +66,208 @@ class CollecteurController extends Controller
     }
 
     /**
-     * Consulter les itinéraires du collecteur
+     * Tournées confiées au collecteur
      */
     public function consulterItineraires(Request $request)
     {
-        $query = Auth::user()->itineraires()->latest();
+        $query = Auth::user()->itineraires()
+            ->with('collectes')
+            ->withCount('pointsDeCollecte')
+            ->orderByRaw("CASE statut WHEN 'en_cours' THEN 0 WHEN 'planifie' THEN 1 ELSE 2 END")
+            ->orderBy('date_debut');
 
-        if ($request->filled('statut')) {
-            $query->where('statut', $request->statut);
+        // Onglet « À faire » par défaut, « Terminées » sur demande
+        if ($request->query('statut') === 'termine') {
+            $query->whereIn('statut', [Itineraire::STATUT_TERMINE, Itineraire::STATUT_ANNULE])->reorder()->orderByDesc('date_debut');
+        } else {
+            $query->whereIn('statut', [Itineraire::STATUT_PLANIFIE, Itineraire::STATUT_EN_COURS]);
         }
 
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-
-        if ($request->filled('date')) {
-            $query->whereDate('date_debut', $request->date);
-        }
-
-        $itineraires = $query->paginate(10);
+        $itineraires = $query->paginate(12)->withQueryString();
 
         return view('collecteur.itineraires.index', compact('itineraires'));
     }
 
     /**
-     * Afficher un itinéraire
+     * Feuille de route d'une tournée : étapes dans l'ordre, carte et actions
      */
     public function afficherItineraire(Itineraire $itineraire)
     {
-        // Vérifier que l'itinéraire appartient au collecteur connecté
-        if ($itineraire->collecteur_id !== Auth::id()) {
-            abort(403, 'Vous n\'avez pas accès à cet itinéraire.');
-        }
-        
-        // Ordre de passage cohérent: par ordre du pivot itineraire_points
-        $pointsCollecte = $itineraire->pointsDeCollecte()
-            ->orderBy('itineraire_points.ordre')
-            ->get();
+        $this->verifierTournee($itineraire);
 
-        // Trier les collectes selon l'ordre des points de l'itinéraire
-        $collectes = \App\Models\Collecte::query()
-            ->with('pointDeCollecte')
-            ->join('itineraire_points', 'collectes.point_collecte_id', '=', 'itineraire_points.point_de_collecte_id')
-            ->where('collectes.itineraire_id', $itineraire->id)
-            ->where('itineraire_points.itineraire_id', $itineraire->id)
-            ->orderBy('itineraire_points.ordre')
-            ->select('collectes.*')
-            ->get();
+        $itineraire->load(['pointsDeCollecte', 'collectes']);
+        $collectesParPoint = $itineraire->collectes->keyBy('point_collecte_id');
 
-        return view('collecteur.itineraires.show', compact('itineraire', 'pointsCollecte', 'collectes'));
+        return view('collecteur.itineraires.show', compact('itineraire', 'collectesParPoint'));
     }
 
     /**
-     * Démarrer un itinéraire
+     * Démarrer la tournée : une collecte « à faire » est créée pour chaque étape
      */
     public function demarrerItineraire(Itineraire $itineraire)
     {
-        // Vérifier que l'itinéraire appartient au collecteur connecté
-        if ($itineraire->collecteur_id !== Auth::id()) {
-            abort(403, 'Vous n\'avez pas accès à cet itinéraire.');
+        $this->verifierTournee($itineraire);
+
+        if ($itineraire->statut !== Itineraire::STATUT_PLANIFIE) {
+            return back()->with('error', 'Cette tournée a déjà été démarrée.');
         }
-        
-        if ($itineraire->statut !== 'planifie') {
-            return back()->with('error', 'Cet itinéraire ne peut pas être démarré.');
+        if (! $itineraire->pointsDeCollecte()->exists()) {
+            return back()->with('error', 'Cette tournée ne contient aucune étape. Contactez l’administration.');
+        }
+        if (Auth::user()->itineraires()->where('statut', Itineraire::STATUT_EN_COURS)->exists()) {
+            return back()->with('error', 'Terminez d’abord la tournée en cours avant d’en démarrer une autre.');
         }
 
         $itineraire->demarrer();
 
-        // Auto-créer des collectes "en_attente" pour chaque point sans collecte existante
-        $points = $itineraire->pointsDeCollecte()->orderBy('itineraire_points.ordre')->get();
-        foreach ($points as $point) {
-            $existe = Collecte::where('itineraire_id', $itineraire->id)
-                ->where('point_collecte_id', $point->id)
-                ->exists();
-            if (!$existe) {
-                Collecte::create([
-                    'itineraire_id' => $itineraire->id,
-                    'point_collecte_id' => $point->id,
-                    'collecteur_id' => Auth::id(),
-                    'statut' => 'prevue',
-                    'notes' => 'Créée lors du démarrage de l\'itinéraire'
-                ]);
-            }
-        }
+        $this->notifierAdmin($itineraire, 'Tournée démarrée', Auth::user()->name . ' a démarré la tournée « ' . $itineraire->nom . ' ».');
 
-        return redirect()->route('collecteur.itineraires.show', $itineraire)
-                        ->with('success', 'Itinéraire démarré avec succès !');
+        return redirect()->route('collecteur.itineraires.show', $itineraire)->with('success', 'Tournée démarrée. Bonne collecte !');
     }
 
     /**
-     * Terminer un itinéraire
+     * Clôturer la tournée (les étapes restantes sont marquées non collectées)
      */
     public function terminerItineraire(Itineraire $itineraire)
     {
-        // Vérifier que l'itinéraire appartient au collecteur connecté
-        if ($itineraire->collecteur_id !== Auth::id()) {
-            abort(403, 'Vous n\'avez pas accès à cet itinéraire.');
-        }
-        
-        if ($itineraire->statut !== 'en_cours') {
-            return back()->with('error', 'Cet itinéraire n\'est pas en cours.');
+        $this->verifierTournee($itineraire);
+
+        if ($itineraire->statut !== Itineraire::STATUT_EN_COURS) {
+            return back()->with('error', 'Cette tournée n’est pas en cours.');
         }
 
         $itineraire->terminer();
+        $p = $itineraire->fresh()->progression;
 
-        return redirect()->route('collecteur.itineraires.show', $itineraire)
-                        ->with('success', 'Itinéraire terminé avec succès !');
-    }
-
-    /**
-     * Mettre à jour l'état de collecte
-     */
-    public function mettreAJourCollecte(Request $request, Collecte $collecte)
-    {
-        $this->authorize('update', $collecte);
-        
-        $request->validate([
-            'statut' => 'required|in:en_cours,termine,rate',
-            'quantite' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string|max:1000',
-            'incidents' => 'nullable|string|max:1000',
-            'photo_apres' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        $data = $request->only(['statut', 'quantite', 'notes']);
-        
-        if ($request->statut === 'termine') {
-            $data['heure_fin'] = now();
-            
-            if ($collecte->heure_debut) {
-                $data['temps_collecte'] = now()->diffInMinutes($collecte->heure_debut);
-            }
-        }
-
-        $collecte->update($data);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Collecte mise à jour avec succès'
-        ]);
-    }
-
-    /**
-     * Valider une collecte avec GPS et photo
-     */
-    public function validerCollecte(Request $request, Collecte $collecte)
-    {
-        $this->authorize('update', $collecte);
-        
-        $request->validate([
-            'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
-            'photo_validation' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
-
-        $photo = $request->file('photo_validation');
-        $filename = 'collectes/validation/' . $collecte->id . '_' . time() . '.' . $photo->getClientOriginalExtension();
-        $photo->storeAs('public', $filename);
-
-        $collecte->validerCollecte(
-            $request->latitude,
-            $request->longitude,
-            $filename
+        $this->notifierAdmin(
+            $itineraire,
+            'Tournée terminée',
+            Auth::user()->name . " a terminé « {$itineraire->nom} » : {$p['collectees']} étape(s) collectée(s) sur {$p['total']}."
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Collecte validée avec succès'
-        ]);
+        return redirect()->route('collecteur.itineraires.show', $itineraire)->with('success', 'Tournée terminée. Merci !');
     }
 
     /**
-     * Afficher un itinéraire spécifique
+     * Valider le passage à une étape : photo obligatoire, position GPS si disponible
      */
-    public function showItineraire(Itineraire $itineraire)
+    public function validerPassage(Request $request, Collecte $collecte)
     {
-        // Vérifier que l'itinéraire appartient au collecteur
-        if ($itineraire->collecteur_id !== Auth::id()) {
-            abort(403, 'Vous n\'avez pas accès à cet itinéraire.');
-        }
+        $this->verifierEtapeModifiable($collecte);
 
-        // Calculer la progression
-        $totalPoints = $itineraire->pointsDeCollecte->count();
-        $collectesTerminees = $itineraire->collectes()->where('statut', 'termine')->count();
-        $progression = $totalPoints > 0 ? round(($collectesTerminees / $totalPoints) * 100) : 0;
-
-        return view('collecteur.itineraires.show', compact('itineraire', 'progression'));
-    }
-
-    /**
-     * Démarrer une collecte
-     */
-    public function startCollection(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'point_id' => 'required|exists:point_de_collectes,id',
-            'itineraire_id' => 'required|exists:itineraires,id',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'accuracy' => 'required|numeric'
+        $donnees = $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+            'type_dechet' => ['required', Rule::in(array_keys(Collecte::TYPES_DECHET))],
+            'quantite' => ['required', 'numeric', 'min:0', 'max:50000'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'precision' => ['nullable', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'photo.required' => 'Prenez une photo du point après le ramassage.',
+            'quantite.required' => 'Indiquez une estimation de la quantité ramassée.',
+        ], [
+            'quantite' => 'quantité',
+            'type_dechet' => 'type de déchet',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Données invalides',
-                'errors' => $validator->errors()
-            ], 422);
+        $distance = null;
+        if (isset($donnees['latitude'], $donnees['longitude'])) {
+            $distance = (int) round($collecte->pointDeCollecte->distanceMetres($donnees['latitude'], $donnees['longitude']));
         }
 
-        $collecteur = Auth::user();
-        $point = PointDeCollecte::findOrFail($request->point_id);
-        $itineraire = Itineraire::findOrFail($request->itineraire_id);
-
-        // Vérifier que l'itinéraire appartient au collecteur
-        if ($itineraire->collecteur_id !== $collecteur->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vous n\'avez pas accès à cet itinéraire.'
-            ], 403);
-        }
-
-        // Vérifier qu'il n'y a pas déjà une collecte en cours pour ce point
-        $existingCollecte = Collecte::where('point_de_collecte_id', $point->id)
-                                  ->where('itineraire_id', $itineraire->id)
-                                  ->where('statut', 'en_cours')
-                                  ->first();
-
-        if ($existingCollecte) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Une collecte est déjà en cours pour ce point.'
-            ], 400);
-        }
-
-        // Créer la collecte
-        $collecte = Collecte::create([
-            'itineraire_id' => $itineraire->id,
-            'point_de_collecte_id' => $point->id,
-            'collecteur_id' => $collecteur->id,
-            'date_heure_debut' => now(),
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'statut' => 'en_cours',
-            'notes' => 'Collecte démarrée automatiquement'
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Collecte démarrée avec succès',
-            'collecte_id' => $collecte->id
-        ]);
-    }
-
-    /**
-     * Valider une collecte avec GPS et photo
-     */
-    public function validateCollection(Request $request, Collecte $collecte)
-    {
-        $validator = Validator::make($request->all(), [
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'accuracy' => 'required|numeric',
-            'quantite' => 'required|numeric|min:0',
-            'type_dechet_collecte' => 'required|string',
-            'photo' => 'required|image|max:2048', // Max 2MB
-            'notes' => 'nullable|string|max:1000'
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        // Vérifier que la collecte appartient au collecteur
-        if ($collecte->collecteur_id !== Auth::id()) {
-            abort(403, 'Vous n\'avez pas accès à cette collecte.');
-        }
-
-        // Vérifier que la collecte est en cours
-        if ($collecte->statut !== 'en_cours') {
-            return back()->withErrors(['collecte' => 'Cette collecte n\'est pas en cours.']);
-        }
-
-        // Sauvegarder la photo
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('collectes', 'public');
-        }
-
-        // Mettre à jour la collecte
         $collecte->update([
-            'date_heure_fin' => now(),
-            'quantite_collectee' => $request->quantite,
-            'type_dechet_collecte' => $request->type_dechet_collecte,
-            'statut' => 'termine',
-            'preuve_photo' => $photoPath,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'notes' => $request->notes
+            'statut' => Collecte::STATUT_TERMINE,
+            'heure_fin' => now(),
+            'type_dechet' => $donnees['type_dechet'],
+            'quantite' => $donnees['quantite'],
+            'latitude_fin' => $donnees['latitude'] ?? null,
+            'longitude_fin' => $donnees['longitude'] ?? null,
+            'precision_gps' => isset($donnees['precision']) ? (int) round($donnees['precision']) : null,
+            'distance_point' => $distance,
+            'validation_gps' => $distance !== null && $distance <= Collecte::TOLERANCE_GPS_METRES,
+            'photo_validation' => $request->file('photo')->store('collectes', 'public'),
+            'notes' => $donnees['notes'] ?? null,
         ]);
 
-        // Vérifier si tous les points de l'itinéraire sont terminés
-        $itineraire = $collecte->itineraire;
-        $totalPoints = $itineraire->pointsDeCollecte->count();
-        $collectesTerminees = $itineraire->collectes()->where('statut', 'termine')->count();
-
-        if ($collectesTerminees >= $totalPoints) {
-            $itineraire->update(['statut' => 'termine']);
-            
-            // Notifier l'administrateur
-            $this->notificationService->creerNotification(
-                $itineraire->admin_id,
-                'info',
-                "L'itinéraire '{$itineraire->nom}' a été terminé par {$collecteur->name}.",
-                route('admin.itineraires.show', $itineraire)
-            );
-        }
-
-        return redirect()->route('collecteur.itineraires.show', $itineraire)
-                        ->with('success', 'Collecte validée avec succès !');
+        return $this->retourTournee($collecte, 'Passage enregistré à « ' . $collecte->pointDeCollecte->nom . ' ».');
     }
 
     /**
-     * Terminer un itinéraire
+     * Signaler qu'une étape n'a pas pu être collectée
      */
-    public function finishItinerary(Request $request, Itineraire $itineraire)
+    public function signalerEchec(Request $request, Collecte $collecte)
     {
-        // Vérifier que l'itinéraire appartient au collecteur
-        if ($itineraire->collecteur_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vous n\'avez pas accès à cet itinéraire.'
-            ], 403);
-        }
+        $this->verifierEtapeModifiable($collecte);
 
-        // Vérifier que l'itinéraire est en cours
-        if ($itineraire->statut !== 'en_cours') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cet itinéraire n\'est pas en cours.'
-            ], 400);
-        }
-
-        // Terminer toutes les collectes en cours
-        $itineraire->collectes()->where('statut', 'en_cours')->update([
-            'statut' => 'annule',
-            'notes' => 'Annulé lors de la fin d\'itinéraire'
+        $donnees = $request->validate([
+            'motif_echec' => ['required', Rule::in(array_keys(Collecte::MOTIFS_ECHEC))],
+            'notes' => ['nullable', 'required_if:motif_echec,autre', 'string', 'max:1000'],
+        ], [
+            'motif_echec.required' => 'Choisissez la raison.',
+            'notes.required_if' => 'Précisez la raison.',
         ]);
 
-        // Marquer l'itinéraire comme terminé
-        $itineraire->update(['statut' => 'termine']);
-
-        // Notifier l'administrateur
-        $collecteur = Auth::user();
-        $this->notificationService->creerNotification(
-            $itineraire->admin_id,
-            'info',
-            "L'itinéraire '{$itineraire->nom}' a été terminé par {$collecteur->name}.",
-            route('admin.itineraires.show', $itineraire)
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Itinéraire terminé avec succès'
+        $collecte->update([
+            'statut' => Collecte::STATUT_RATE,
+            'heure_fin' => now(),
+            'motif_echec' => $donnees['motif_echec'],
+            'notes' => $donnees['notes'] ?? null,
         ]);
+
+        return $this->retourTournee($collecte, 'Étape « ' . $collecte->pointDeCollecte->nom . ' » marquée non collectée.');
     }
 
     /**
-     * Signaler un incident
+     * Détail d'une collecte
      */
-    public function createIncident()
+    public function showCollecte(Collecte $collecte)
     {
-        $collecteur = Auth::user();
-        $itinerairesActifs = $collecteur->itineraires()->where('statut', 'en_cours')->get();
-        
-        return view('collecteur.incidents.create', compact('itinerairesActifs'));
+        abort_unless($collecte->collecteur_id === Auth::id(), 403, 'Vous n’avez pas accès à cette collecte.');
+
+        $collecte->load(['pointDeCollecte', 'itineraire']);
+
+        return view('collecteur.collectes.show', compact('collecte'));
+    }
+
+    /**
+     * Historique des collectes du collecteur
+     */
+    public function indexCollectes(Request $request)
+    {
+        $query = Auth::user()->collectes()
+            ->with(['pointDeCollecte', 'itineraire'])
+            ->whereIn('statut', [Collecte::STATUT_TERMINE, Collecte::STATUT_RATE]);
+
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+        if ($request->filled('date_debut')) {
+            $query->whereDate('date_collecte', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('date_collecte', '<=', $request->date_fin);
+        }
+
+        $collectes = $query->latest('heure_fin')->paginate(20)->withQueryString();
+
+        return view('collecteur.collectes.index', compact('collectes'));
+    }
+
+    /**
+     * Formulaire de signalement d'incident
+     */
+    public function createIncident(Request $request)
+    {
+        $itineraires = Auth::user()->itineraires()
+            ->whereIn('statut', [Itineraire::STATUT_EN_COURS, Itineraire::STATUT_PLANIFIE])
+            ->orderByRaw("CASE WHEN statut = 'en_cours' THEN 0 ELSE 1 END")
+            ->orderBy('date_debut')
+            ->get();
+
+        $selection = (int) $request->query('itineraire_id', $itineraires->first()?->id);
+
+        return view('collecteur.incidents.create', compact('itineraires', 'selection'));
     }
 
     /**
@@ -444,233 +275,104 @@ class CollecteurController extends Controller
      */
     public function storeIncident(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'itineraire_id' => 'required|exists:itineraires,id',
-            'type_incident' => 'required|string|in:panne_vehicule,probleme_acces,dechet_non_collectable,autre',
-            'description' => 'required|string|max:1000',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'photo' => 'nullable|image|max:2048'
+        $donnees = $request->validate([
+            'itineraire_id' => ['required', 'integer'],
+            'type_incident' => ['required', Rule::in(['panne_vehicule', 'probleme_acces', 'dechet_non_collectable', 'autre'])],
+            'description' => ['required', 'string', 'max:1000'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+        ], [], [
+            'itineraire_id' => 'tournée',
+            'type_incident' => 'type d’incident',
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
+        $itineraire = Itineraire::findOrFail($donnees['itineraire_id']);
+        $this->verifierTournee($itineraire);
 
-        $itineraire = Itineraire::findOrFail($request->itineraire_id);
-
-        // Vérifier que l'itinéraire appartient au collecteur
-        if ($itineraire->collecteur_id !== Auth::id()) {
-            abort(403, 'Vous n\'avez pas accès à cet itinéraire.');
-        }
-
-        // Sauvegarder la photo si fournie
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('incidents', 'public');
-        }
-
-        // Créer l'incident
         $incident = Incident::create([
             'collecteur_id' => Auth::id(),
             'itineraire_id' => $itineraire->id,
-            'type_incident' => $request->type_incident,
-            'description' => $request->description,
-            'latitude' => $request->latitude,
-            'longitude' => $request->longitude,
-            'photo' => $photoPath,
+            'type_incident' => $donnees['type_incident'],
+            'description' => $donnees['description'],
+            'latitude' => $donnees['latitude'] ?? null,
+            'longitude' => $donnees['longitude'] ?? null,
+            'photo' => $request->hasFile('photo') ? $request->file('photo')->store('incidents', 'public') : null,
             'statut' => 'signale',
-            'priorite' => 'normale'
+            'priorite' => $donnees['type_incident'] === 'panne_vehicule' ? 'elevee' : 'normale',
         ]);
 
-        // Notifier l'administrateur
-        $collecteur = Auth::user();
-        $this->notificationService->creerNotification(
-            $itineraire->admin_id,
-            'warning',
-            "Incident signalé par {$collecteur->name} sur l'itinéraire '{$itineraire->nom}'.",
-            route('admin.incidents.show', $incident)
+        $this->notifierAdmin(
+            $itineraire,
+            'Incident : ' . $incident->type_label,
+            Auth::user()->name . ' signale un incident sur « ' . $itineraire->nom . ' » : ' . $incident->description
         );
 
-        return redirect()->route('collecteur.dashboard')
-                        ->with('success', 'Incident signalé avec succès !');
+        return redirect()->route('collecteur.itineraires.show', $itineraire)
+            ->with('success', 'Incident transmis à l’administration.');
     }
 
     /**
-     * Afficher les incidents du collecteur
+     * Incidents signalés par le collecteur
      */
     public function indexIncidents()
     {
-        $collecteur = Auth::user();
-        $incidents = $collecteur->incidents()->with('itineraire')->latest()->paginate(10);
+        $incidents = Auth::user()->incidents()->with('itineraire')->latest()->paginate(10);
 
         return view('collecteur.incidents.index', compact('incidents'));
     }
 
     /**
-     * Afficher les détails d'un incident
+     * Détail d'un incident
      */
-    public function showIncident(Request $request, Incident $incident)
+    public function showIncident(Incident $incident)
     {
-        // Vérifier que l'incident appartient au collecteur
-        if ($incident->collecteur_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vous n\'avez pas accès à cet incident.'
-            ], 403);
-        }
+        abort_unless($incident->collecteur_id === Auth::id(), 403, 'Vous n’avez pas accès à cet incident.');
 
         $incident->load('itineraire');
-
-        if ($request->expectsJson()) {
-            $html = view('collecteur.incidents.partials.details', compact('incident'))->render();
-            
-            return response()->json([
-                'success' => true,
-                'html' => $html
-            ]);
-        }
 
         return view('collecteur.incidents.show', compact('incident'));
     }
 
-    /**
-     * Afficher les détails d'une collecte
-     */
-    public function showCollecte(Request $request, Collecte $collecte)
+    private function verifierTournee(Itineraire $itineraire): void
     {
-        // Vérifier que la collecte appartient au collecteur
-        if ($collecte->collecteur_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vous n\'avez pas accès à cette collecte.'
-            ], 403);
-        }
-
-        $collecte->load(['pointDeCollecte', 'itineraire']);
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'collecte' => $collecte
-            ]);
-        }
-
-        return view('collecteur.collectes.show', compact('collecte'));
+        abort_unless($itineraire->collecteur_id === Auth::id(), 403, 'Cette tournée ne vous est pas attribuée.');
     }
 
-    /**
-     * Mettre à jour le statut d'une collecte
-     */
-    public function updateCollecteStatus(Request $request, Collecte $collecte)
+    private function verifierEtapeModifiable(Collecte $collecte): void
     {
-        $validator = Validator::make($request->all(), [
-            'statut' => 'required|string|in:en_cours,termine,annule,en_pause',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'accuracy' => 'nullable|numeric',
-            'notes' => 'nullable|string|max:1000'
-        ]);
+        abort_unless($collecte->collecteur_id === Auth::id(), 403, 'Vous n’avez pas accès à cette collecte.');
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Données invalides',
-                'errors' => $validator->errors()
-            ], 422);
+        if ($collecte->itineraire->statut !== Itineraire::STATUT_EN_COURS || $collecte->estTraitee()) {
+            abort(redirect()->route('collecteur.itineraires.show', $collecte->itineraire_id)
+                ->with('error', 'Cette étape a déjà été traitée ou la tournée n’est plus en cours.'));
         }
-
-        // Vérifier que la collecte appartient au collecteur
-        if ($collecte->collecteur_id !== Auth::id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vous n\'avez pas accès à cette collecte.'
-            ], 403);
-        }
-
-        $updateData = [
-            'statut' => $request->statut,
-        ];
-
-        // Ajouter les données GPS si fournies
-        if ($request->latitude && $request->longitude) {
-            $updateData['latitude'] = $request->latitude;
-            $updateData['longitude'] = $request->longitude;
-            $updateData['accuracy'] = $request->accuracy;
-        }
-
-        // Ajouter les notes si fournies
-        if ($request->notes) {
-            $updateData['notes'] = $request->notes;
-        }
-
-        // Si on termine la collecte, ajouter la date de fin
-        if ($request->statut === 'termine') {
-            $updateData['date_heure_fin'] = now();
-        }
-
-        $collecte->update($updateData);
-
-        // Notifier l'administrateur si la collecte est terminée
-        if ($request->statut === 'termine') {
-            $collecteur = Auth::user();
-            $this->notificationService->creerNotification(
-                $collecte->itineraire->admin_id,
-                'success',
-                "Collecte terminée par {$collecteur->name} au point '{$collecte->pointDeCollecte->nom}'.",
-                route('admin.collectes.show', $collecte)
-            );
-        }
-
-        $statutLabels = [
-            'en_cours' => 'en cours',
-            'termine' => 'terminée',
-            'annule' => 'annulée',
-            'en_pause' => 'mise en pause'
-        ];
-
-        return response()->json([
-            'success' => true,
-            'message' => "Collecte {$statutLabels[$request->statut]} avec succès"
-        ]);
     }
 
-    /**
-     * Afficher toutes les collectes du collecteur
-     */
-    public function indexCollectes(Request $request)
+    private function retourTournee(Collecte $collecte, string $message)
     {
-        $collecteur = Auth::user();
-
-        // Redirection vers la tournée en cours (onglet Points) si existante, sauf si ?liste=1
-        $itineraireEnCours = $collecteur->itineraires()->where('statut', 'en_cours')->latest()->first();
-        if ($itineraireEnCours && !$request->boolean('liste')) {
-            return redirect()->route('collecteur.itineraires.show', [$itineraireEnCours->id, 'tab' => 'points'])
-                ->with('info', "Une tournée est en cours. Ouverture de l'onglet Points.");
+        $restantes = $collecte->itineraire->progression['restantes'];
+        if ($restantes === 0) {
+            $message .= ' Toutes les étapes sont faites : vous pouvez terminer la tournée.';
         }
 
-        $query = $collecteur->collectes()->with(['pointDeCollecte', 'itineraire']);
+        return redirect()->to(route('collecteur.itineraires.show', $collecte->itineraire_id) . '#etape-' . $collecte->id)
+            ->with('success', $message);
+    }
 
-        // Filtres
-        if ($request->filled('statut')) {
-            $query->where('statut', $request->statut);
+    private function notifierAdmin(Itineraire $itineraire, string $titre, string $message): void
+    {
+        if (! $itineraire->admin_id) {
+            return;
         }
 
-        if ($request->filled('date_debut')) {
-            $query->whereDate('created_at', '>=', $request->date_debut);
-        }
-
-        if ($request->filled('date_fin')) {
-            $query->whereDate('created_at', '<=', $request->date_fin);
-        }
-
-        if ($request->filled('type')) {
-            $query->where('type_dechet', $request->type);
-        }
-
-        $collectes = $query->latest()->paginate(5);
-
-        return view('collecteur.collectes.index', compact('collectes'));
+        $this->notificationService->creerNotification(
+            $itineraire->admin_id,
+            'itineraire',
+            $titre,
+            $message,
+            route('admin.itineraires.show', $itineraire)
+        );
     }
 
     /**

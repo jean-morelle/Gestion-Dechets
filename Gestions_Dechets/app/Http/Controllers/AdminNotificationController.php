@@ -12,24 +12,44 @@ class AdminNotificationController extends Controller
     /**
      * Afficher la liste des notifications envoyées
      */
-    public function index()
+    public function index(Request $request)
     {
+        $onglet = $request->query('onglet', 'recues');
+
+        // Reçues : alertes de l'application (nouveau signalement, incident, tournée terminée…)
+        // Envoyées : messages que l'administrateur a adressés aux habitants ou aux agents
         $notifications = Notification::with(['user', 'expediteur'])
-            ->where('expediteur_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->where($onglet === 'envoyees' ? 'expediteur_id' : 'user_id', Auth::id())
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
 
-        $statistiques = [
-            'total' => $notifications->total(),
-            'non_lues' => Notification::where('expediteur_id', Auth::id())
-                ->where('statut', Notification::STATUT_NON_LU)
-                ->count(),
-            'lues' => Notification::where('expediteur_id', Auth::id())
-                ->where('statut', Notification::STATUT_LU)
-                ->count(),
-        ];
+        $nonLues = Notification::where('user_id', Auth::id())->where('statut', Notification::STATUT_NON_LU)->count();
 
-        return view('admin.notifications.index', compact('notifications', 'statistiques'));
+        return view('admin.notifications.index', compact('notifications', 'onglet', 'nonLues'));
+    }
+
+    /**
+     * Ouvrir une notification reçue : elle est marquée lue et l'on suit son lien
+     */
+    public function ouvrir(Notification $notification)
+    {
+        abort_unless($notification->user_id === Auth::id(), 403);
+
+        $notification->marquerCommeLue();
+
+        return $notification->lien_action
+            ? redirect()->to($notification->lien_action)
+            : redirect()->route('admin.notifications.index');
+    }
+
+    public function toutMarquerLu()
+    {
+        Notification::where('user_id', Auth::id())
+            ->where('statut', Notification::STATUT_NON_LU)
+            ->update(['statut' => Notification::STATUT_LU, 'date_lecture' => now()]);
+
+        return back()->with('success', 'Toutes les notifications sont marquées comme lues.');
     }
 
     /**
@@ -83,19 +103,6 @@ class AdminNotificationController extends Controller
 
         return redirect()->route('admin.notifications.index')
             ->with('success', "Notification envoyée à {$notificationsCreees} destinataire(s) !");
-    }
-
-    /**
-     * Afficher les détails d'une notification
-     */
-    public function show(Notification $notification)
-    {
-        // Vérifier que l'admin est l'expéditeur
-        if ($notification->expediteur_id !== Auth::id()) {
-            abort(403);
-        }
-
-        return view('admin.notifications.show', compact('notification'));
     }
 
     /**

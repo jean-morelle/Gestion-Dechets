@@ -1,81 +1,90 @@
 @extends('layouts.app')
 
-@section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header py-2 d-flex justify-content-between align-items-center">
-                    <h6 class="card-title mb-0">Calendrier des Collectes</h6>
-                    <a href="{{ route('admin.calendrier.create') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i> Créer
-                    </a>
-                </div>
-                <div class="card-body py-3">
-                    @if(isset($collectes) && count($collectes) > 0)
-                    <table class="table table-hover table-sm">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Nom</th>
-                                <th>Type</th>
-                                <th>Quartier</th>
-                                <th>Fréquence</th>
-                                <th>Jour</th>
-                                <th>Heure</th>
-                                <th>Statut</th>
-                                <th>Responsable</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($collectes as $calendrier)
-                            <tr>
-                                <td>{{ Str::limit($calendrier->nom, 30) }}</td>
-                                <td>
-                                    <span class="badge {{ $calendrier->type_collecte_class ?? 'bg-info' }}">
-                                        {{ $calendrier->type_collecte_label ?? $calendrier->type_collecte }}
-                                    </span>
-                                </td>
-                                <td>{{ Str::limit($calendrier->quartier, 15) }}</td>
-                                <td>{{ $calendrier->frequence_label ?? $calendrier->frequence }}</td>
-                                <td>{{ $calendrier->jour_semaine_label ?? 'Non défini' }}</td>
-                                <td>{{ $calendrier->heure_debut ?? '07:00' }} - {{ $calendrier->heure_fin ?? '18:00' }}</td>
-                                <td>
-                                    <span class="badge {{ $calendrier->statut_class ?? 'bg-success' }}">
-                                        {{ $calendrier->statut_label ?? 'Actif' }}
-                                    </span>
-                                </td>
-                                <td>{{ Str::limit($calendrier->responsable->name ?? 'Non assigné', 15) }}</td>
-                                <td>
-                                    <a href="#" class="btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="#" class="btn btn-outline-danger btn-sm">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    @else
-                    <div class="text-center py-4">
-                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Aucun calendrier de collecte</p>
-                        <a href="{{ route('admin.calendrier.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Créer un calendrier
-                        </a>
-                    </div>
-                    @endif
+@section('title', 'Calendrier des collectes')
 
-                    @if(isset($collectes) && $collectes->hasPages())
-                    <div class="text-center mt-3">
-                        <a href="{{ $collectes->nextPageUrl() }}" class="btn btn-outline-primary">Suivant</a>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
+@php
+    $types = \App\Http\Controllers\AdminCalendrierController::TYPES;
+    $frequences = \App\Http\Controllers\AdminCalendrierController::FREQUENCES;
+@endphp
+
+@section('content')
+<div class="page-header">
+    <div>
+        <h1>Calendrier des collectes</h1>
+        <p>Jours de passage par quartier, affichés aux habitants qui reçoivent un rappel la veille à 18 h.</p>
     </div>
+    <a href="{{ route('admin.calendrier.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1" aria-hidden="true"></i>Ajouter un passage</a>
 </div>
+
+<form method="GET" class="d-flex flex-wrap gap-2 mb-3">
+    <label for="filtre-quartier" class="visually-hidden">Quartier</label>
+    <select class="form-select w-auto" id="filtre-quartier" name="quartier" onchange="this.form.submit()">
+        <option value="">Tous les quartiers</option>
+        @foreach($quartiers as $q)
+            <option value="{{ $q }}" @selected(request('quartier') === $q)>{{ $q }}</option>
+        @endforeach
+    </select>
+    <div class="form-check align-self-center ms-2">
+        <input class="form-check-input" type="checkbox" id="tous" name="statut" value="tous" @checked(request('statut') === 'tous') onchange="this.form.submit()">
+        <label class="form-check-label" for="tous">Afficher aussi les passages suspendus</label>
+    </div>
+</form>
+
+<div class="card">
+    @if($calendriers->isEmpty())
+        <div class="empty-state">
+            <i class="fas fa-calendar-days" aria-hidden="true"></i>
+            <p>Aucun passage programmé. Ajoutez les jours de collecte de chaque quartier : les habitants les verront dans leur calendrier.</p>
+            <a href="{{ route('admin.calendrier.create') }}" class="btn btn-primary btn-sm">Ajouter un passage</a>
+        </div>
+    @else
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Quartier</th>
+                        <th>Collecte</th>
+                        <th>Quand</th>
+                        <th>Prochain passage</th>
+                        <th><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($calendriers as $c)
+                        @php
+                            $prochain = $c->getProchaineDateCollecte();
+                        @endphp
+                        <tr>
+                            <td class="fw-medium">{{ $c->quartier }}</td>
+                            <td>{{ $types[$c->type_collecte] ?? $c->type_collecte }}</td>
+                            <td>
+                                @if($c->frequence === 'hebdomadaire')
+                                    Chaque {{ $c->jour_semaine }}
+                                @elseif($c->frequence === 'ponctuelle')
+                                    Le {{ $c->date_debut?->translatedFormat('j F Y') }}
+                                @elseif($c->frequence === 'mensuelle')
+                                    Le {{ $c->date_debut?->day ?? 1 }} de chaque mois
+                                @else
+                                    Tous les jours
+                                @endif
+                                <div class="small text-body-secondary">{{ $c->heure_debut?->format('H\hi') }} – {{ $c->heure_fin?->format('H\hi') }}</div>
+                            </td>
+                            <td>
+                                @if($c->statut !== 'actif')
+                                    <span class="badge tone-slate">Suspendu</span>
+                                @elseif($prochain)
+                                    {{ $prochain->isToday() ? 'Aujourd’hui' : ($prochain->isTomorrow() ? 'Demain' : ucfirst($prochain->translatedFormat('l j F'))) }}
+                                @else
+                                    <span class="text-body-secondary">—</span>
+                                @endif
+                            </td>
+                            <td class="text-end"><a href="{{ route('admin.calendrier.edit', $c) }}" class="btn btn-sm btn-outline-primary">Modifier</a></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</div>
+<div class="mt-3">{{ $calendriers->links() }}</div>
 @endsection

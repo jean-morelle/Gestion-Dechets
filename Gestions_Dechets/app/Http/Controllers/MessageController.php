@@ -130,14 +130,16 @@ class MessageController extends Controller
             abort(403);
         }
 
-        return view('messages.reply', compact('message'));
+        return view('messages.reply', ['originalMessage' => $message]);
     }
 
     /**
      * Enregistrer une réponse
      */
-    public function replyStore(Request $request, Message $originalMessage)
+    public function replyStore(Request $request, Message $message)
     {
+        $originalMessage = $message;
+
         // Vérifier que l'utilisateur peut répondre à ce message
         if ($originalMessage->receiver_id !== Auth::id()) {
             abort(403);

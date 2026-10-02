@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Planifier l'envoi des rappels automatiques toutes les heures
-Schedule::command('rappels:envoyer')->hourly();
+// Chaque soir, les habitants sont prévenus des collectes du lendemain dans leur quartier
+Schedule::command('collectes:rappeler')->dailyAt('18:00');

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class CalendrierCollecte extends Model
 {
@@ -29,6 +30,9 @@ class CalendrierCollecte extends Model
     const VENDREDI = 'vendredi';
     const SAMEDI = 'samedi';
     const DIMANCHE = 'dimanche';
+
+    /** Numéro ISO du jour (lundi = 1) */
+    const JOURS_ISO = ['lundi' => 1, 'mardi' => 2, 'mercredi' => 3, 'jeudi' => 4, 'vendredi' => 5, 'samedi' => 6, 'dimanche' => 7];
 
     // Constantes pour les statuts
     const STATUT_ACTIF = 'actif';
@@ -181,105 +185,65 @@ class CalendrierCollecte extends Model
         return $query->where('type_collecte', $type);
     }
 
-    // Vérifier si une date est dans la période d'activité
-    public function isDateValide($date)
+    /** « des ordures ménagères », pour les phrases : « collecte des ordures ménagères à Bè » */
+    public function getTypeCollecteLabelCourtAttribute(): string
     {
-        if ($this->date_debut && $date < $this->date_debut) {
+        return match ($this->type_collecte) {
+            self::TYPE_MENAGERE => 'des ordures ménagères',
+            self::TYPE_ENCOMBRANT => 'des encombrants',
+            self::TYPE_VERT => 'des déchets verts',
+            self::TYPE_RECYCLAGE => 'des recyclables',
+            default => 'des déchets',
+        };
+    }
+
+    /** La date est-elle dans la période de validité (date de début / de fin) ? */
+    public function isDateValide($date): bool
+    {
+        $jour = Carbon::parse($date)->toDateString();
+
+        if ($this->date_debut && $jour < $this->date_debut->toDateString()) {
             return false;
         }
-        
-        if ($this->date_fin && $date > $this->date_fin) {
+        if ($this->date_fin && $jour > $this->date_fin->toDateString()) {
             return false;
         }
-        
+
         return true;
     }
 
-    // Obtenir la prochaine date de collecte
-    public function getProchaineDateCollecte()
+    /**
+     * Y a-t-il un passage ce jour-là ?
+     * Hebdomadaire : le jour de la semaine choisi. Mensuelle : le même quantième
+     * que la date de début (le 1er si aucune). Ponctuelle : la date de début.
+     */
+    public function aLieuLe($date): bool
     {
-        if (!$this->isActif()) {
-            return null;
+        $date = Carbon::parse($date);
+
+        if ($this->statut !== self::STATUT_ACTIF || ! $this->isDateValide($date)) {
+            return false;
         }
 
-        $aujourdhui = now();
-        
-        if (!$this->isDateValide($aujourdhui)) {
-            return null;
+        return match ($this->frequence) {
+            self::FREQUENCE_QUOTIDIENNE => true,
+            self::FREQUENCE_HEBDOMADAIRE => (self::JOURS_ISO[$this->jour_semaine] ?? null) === $date->dayOfWeekIso,
+            self::FREQUENCE_MENSUELLE => $date->day === ($this->date_debut?->day ?? 1),
+            self::FREQUENCE_PONCTUELLE => $this->date_debut?->isSameDay($date) ?? false,
+            default => false,
+        };
+    }
+
+    /** Prochain passage à partir d'aujourd'hui (inclus), dans les deux mois à venir */
+    public function getProchaineDateCollecte(): ?Carbon
+    {
+        $jour = today();
+        for ($i = 0; $i <= 62; $i++, $jour = $jour->copy()->addDay()) {
+            if ($this->aLieuLe($jour)) {
+                return $jour;
+            }
         }
 
-        switch ($this->frequence) {
-            case self::FREQUENCE_QUOTIDIENNE:
-                return $aujourdhui->addDay();
-                
-            case self::FREQUENCE_HEBDOMADAIRE:
-                if ($this->jour_semaine) {
-                    $jourSemaine = match($this->jour_semaine) {
-                        self::LUNDI => 1,
-                        self::MARDI => 2,
-                        self::MERCREDI => 3,
-                        self::JEUDI => 4,
-                        self::VENDREDI => 5,
-                        self::SAMEDI => 6,
-                        self::DIMANCHE => 0,
-                        default => null
-                    };
-                    
-                    if ($jourSemaine !== null) {
-                        $prochaineDate = $aujourdhui->next($jourSemaine);
-                        return $this->isDateValide($prochaineDate) ? $prochaineDate : null;
-                    }
-                }
-                break;
-                
-            case self::FREQUENCE_MENSUELLE:
-                return $aujourdhui->addMonth();
-                
-            case self::FREQUENCE_PONCTUELLE:
-                return $this->date_debut;
-        }
-        
         return null;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

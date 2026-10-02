@@ -110,31 +110,6 @@ class CampagneController extends Controller
         
         return response()->download($filePath, $campagne->titre . '.' . pathinfo($filePath, PATHINFO_EXTENSION));
     }
-
-    /**
-     * Afficher les campagnes par type
-     */
-    public function parType($type)
-    {
-        $user = Auth::user();
-        $quartier = $user->quartier ?? 'Centre-ville';
-        
-        $campagnes = Campagne::visible()
-            ->pourQuartier($quartier)
-            ->parType($type)
-            ->orderBy('created_at', 'desc')
-            ->paginate(12);
-        
-        $typeLabel = [
-            'affiche' => 'Affiches numériques',
-            'video' => 'Vidéos',
-            'message' => 'Messages',
-            'infographie' => 'Infographies'
-        ][$type] ?? ucfirst($type);
-        
-        return view('citoyen.campagnes.type', compact('campagnes', 'type', 'typeLabel', 'quartier'));
-    }
-
     /**
      * Afficher la liste des campagnes pour les collecteurs
      */

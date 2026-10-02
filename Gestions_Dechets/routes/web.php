@@ -1,12 +1,11 @@
 <?php
-
+use App\Http\Controllers\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CitoyenController;
 use App\Http\Controllers\CollecteurController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\TwoFactorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,9 +36,14 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// Pages légales (publiques)
+Route::view('/confidentialite', 'legal.confidentialite')->name('legal.confidentialite');
+Route::view('/conditions-utilisation', 'legal.conditions')->name('legal.conditions');
+
 // Routes d'authentification
-Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
+Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->middleware('guest')->name('login');
+// Le contrôleur bloque 5 essais par compte ; cette limite protège contre les essais en rafale sur plusieurs comptes
+Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->middleware(['guest', 'throttle:20,1']);
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
 // Routes Google OAuth
@@ -50,84 +54,24 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleGoogleC
 Route::middleware(['auth', 'role:collecteur'])->group(function () {
     Route::get('/collecteur/dashboard', [App\Http\Controllers\CollecteurController::class, 'dashboard'])->name('collecteur.dashboard');
     
-    // Route de test locale: créer un itinéraire avec 3 points et y associer des collectes en attente
-    if (app()->environment('local')) {
-        Route::get('/collecteur/dev/seed', function () {
-            $user = auth()->user();
-            if (!$user || $user->role !== 'collecteur') {
-                return redirect()->route('login')->with('error', 'Connectez-vous en tant que collecteur');
-            }
-
-            // Créer trois points de collecte simples
-            $points = [];
-            $base = [
-                ['nom' => 'Point A', 'adresse' => 'Adresse A', 'lat' => 14.6937, 'lng' => -17.4441],
-                ['nom' => 'Point B', 'adresse' => 'Adresse B', 'lat' => 14.7000, 'lng' => -17.4500],
-                ['nom' => 'Point C', 'adresse' => 'Adresse C', 'lat' => 14.7050, 'lng' => -17.4600],
-            ];
-            foreach ($base as $b) {
-                $points[] = \App\Models\PointDeCollecte::create([
-                    'nom' => $b['nom'],
-                    'type' => \App\Models\PointDeCollecte::TYPE_PUBLIC,
-                    'adresse' => $b['adresse'],
-                    'quartier' => 'Centre',
-                    'latitude' => $b['lat'],
-                    'longitude' => $b['lng'],
-                    'statut' => \App\Models\PointDeCollecte::STATUT_ACTIF,
-                ]);
-            }
-
-            // Créer un itinéraire et attacher les points avec ordre
-            $itineraire = \App\Models\Itineraire::create([
-                'nom' => 'Tournée de test',
-                'type' => 'ponctuel',
-                'description' => 'Généré pour test',
-                'collecteur_id' => $user->id,
-                'date_debut' => now()->startOfDay(),
-                'date_fin' => now()->endOfDay(),
-                'heure_debut' => now(),
-                'heure_fin' => now()->addHours(2),
-                'statut' => 'planifie',
-                'distance_estimee' => 2.5,
-                'duree_estimee' => 30,
-                'admin_id' => $user->id,
-            ]);
-
-            foreach ($points as $i => $p) {
-                $itineraire->pointsDeCollecte()->attach($p->id, ['ordre' => $i + 1]);
-            }
-
-            // Démarrer l'itinéraire pour auto-créer les collectes en_attente
-            app(\App\Http\Controllers\CollecteurController::class)->demarrerItineraire($itineraire);
-
-            return redirect()->route('collecteur.itineraires.show', [$itineraire->id, 'tab' => 'points'])
-                ->with('success', 'Données de test créées.');
-        })->name('collecteur.dev.seed');
-    }
-    
-    // Routes collectes
-    Route::get('/collecteur/collectes', [App\Http\Controllers\CollecteurController::class, 'indexCollectes'])->name('collecteur.collectes.index');
-    Route::get('/collecteur/collectes/{collecte}', [App\Http\Controllers\CollecteurController::class, 'showCollecte'])->name('collecteur.collectes.show');
-    Route::post('/collecteur/collectes/{collecte}/start', [App\Http\Controllers\CollecteurController::class, 'startCollection'])->name('collecteur.collectes.start');
-    Route::put('/collecteur/collectes/{collecte}/validate', [App\Http\Controllers\CollecteurController::class, 'validerCollecte'])->name('collecteur.collectes.validate');
-    Route::put('/collecteur/collectes/{collecte}/update', [App\Http\Controllers\CollecteurController::class, 'mettreAJourCollecte'])->name('collecteur.collectes.mettre-a-jour');
-    Route::put('/collecteur/collectes/{collecte}/status', [App\Http\Controllers\CollecteurController::class, 'updateCollecteStatus'])->name('collecteur.collectes.update-status');
-    
-    // Routes itinéraires
+    // Tournées : feuille de route, démarrage, passage à chaque étape, clôture
     Route::get('/collecteur/itineraires', [App\Http\Controllers\CollecteurController::class, 'consulterItineraires'])->name('collecteur.itineraires.index');
     Route::get('/collecteur/itineraires/{itineraire}', [App\Http\Controllers\CollecteurController::class, 'afficherItineraire'])->name('collecteur.itineraires.show');
     Route::post('/collecteur/itineraires/{itineraire}/demarrer', [App\Http\Controllers\CollecteurController::class, 'demarrerItineraire'])->name('collecteur.itineraires.demarrer');
     Route::post('/collecteur/itineraires/{itineraire}/terminer', [App\Http\Controllers\CollecteurController::class, 'terminerItineraire'])->name('collecteur.itineraires.terminer');
-    
-    // Routes incidents
+    Route::post('/collecteur/collectes/{collecte}/passage', [App\Http\Controllers\CollecteurController::class, 'validerPassage'])->name('collecteur.collectes.passage');
+    Route::post('/collecteur/collectes/{collecte}/echec', [App\Http\Controllers\CollecteurController::class, 'signalerEchec'])->name('collecteur.collectes.echec');
+
+    // Historique des collectes
+    Route::get('/collecteur/collectes', [App\Http\Controllers\CollecteurController::class, 'indexCollectes'])->name('collecteur.collectes.index');
+    Route::get('/collecteur/collectes/{collecte}', [App\Http\Controllers\CollecteurController::class, 'showCollecte'])->name('collecteur.collectes.show');
+
+    // Incidents
     Route::get('/collecteur/incidents', [App\Http\Controllers\CollecteurController::class, 'indexIncidents'])->name('collecteur.incidents.index');
     Route::get('/collecteur/incidents/create', [App\Http\Controllers\CollecteurController::class, 'createIncident'])->name('collecteur.incidents.create');
     Route::post('/collecteur/incidents', [App\Http\Controllers\CollecteurController::class, 'storeIncident'])->name('collecteur.incidents.store');
     Route::get('/collecteur/incidents/{incident}', [App\Http\Controllers\CollecteurController::class, 'showIncident'])->name('collecteur.incidents.show');
-    Route::get('/collecteur/incidents/{incident}/edit', [App\Http\Controllers\CollecteurController::class, 'editIncident'])->name('collecteur.incidents.edit');
-    Route::put('/collecteur/incidents/{incident}', [App\Http\Controllers\CollecteurController::class, 'updateIncident'])->name('collecteur.incidents.update');
-    Route::delete('/collecteur/incidents/{incident}', [App\Http\Controllers\CollecteurController::class, 'destroyIncident'])->name('collecteur.incidents.destroy');
-    
+
     // Routes notifications
     Route::get('/collecteur/notifications', [App\Http\Controllers\CollecteurController::class, 'indexNotifications'])->name('collecteur.notifications.index');
     Route::post('/collecteur/notifications/{notification}/marquer-lue', [App\Http\Controllers\CollecteurController::class, 'marquerNotificationLue'])->name('collecteur.notifications.marquer-lue');
@@ -144,47 +88,55 @@ Route::middleware(['auth', 'role:collecteur'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [App\Http\Controllers\AdminController::class, 'dashboard'])->name('admin.dashboard');
     
-    // Routes utilisateurs
-    Route::get('/admin/utilisateurs', [App\Http\Controllers\AdminController::class, 'gererComptes'])->name('admin.utilisateurs.index');
-    Route::get('/admin/utilisateurs/{user}', [App\Http\Controllers\AdminController::class, 'afficherUtilisateur'])->name('admin.utilisateurs.show');
-    Route::post('/admin/utilisateurs/{user}/statut', [App\Http\Controllers\AdminController::class, 'modifierStatutUtilisateur'])->name('admin.utilisateurs.statut');
-    Route::delete('/admin/utilisateurs/{user}', [App\Http\Controllers\AdminController::class, 'destroyUtilisateur'])->name('admin.utilisateurs.destroy');
+    // Comptes : les citoyens s'inscrivent seuls, les agents sont créés ici
+    Route::resource('/admin/utilisateurs', App\Http\Controllers\AdminUtilisateurController::class)
+        ->except('edit')->parameters(['utilisateurs' => 'utilisateur'])->names('admin.utilisateurs');
+    Route::post('/admin/utilisateurs/{utilisateur}/mot-de-passe', [App\Http\Controllers\AdminUtilisateurController::class, 'reinitialiserMotDePasse'])->name('admin.utilisateurs.reinitialiser');
+
+    // Demandes de collecte des citoyens
+    Route::get('/admin/demandes', [App\Http\Controllers\AdminDemandeController::class, 'index'])->name('admin.demandes.index');
+    Route::get('/admin/demandes/{demande}', [App\Http\Controllers\AdminDemandeController::class, 'show'])->name('admin.demandes.show');
+    Route::post('/admin/demandes/{demande}/accepter', [App\Http\Controllers\AdminDemandeController::class, 'accepter'])->name('admin.demandes.accepter');
+    Route::post('/admin/demandes/{demande}/refuser', [App\Http\Controllers\AdminDemandeController::class, 'refuser'])->name('admin.demandes.refuser');
+    Route::post('/admin/demandes/{demande}/terminer', [App\Http\Controllers\AdminDemandeController::class, 'terminer'])->name('admin.demandes.terminer');
+
+    // Incidents signalés par les collecteurs
+    Route::get('/admin/incidents', [App\Http\Controllers\AdminIncidentController::class, 'index'])->name('admin.incidents.index');
+    Route::get('/admin/incidents/{incident}', [App\Http\Controllers\AdminIncidentController::class, 'show'])->name('admin.incidents.show');
+    Route::put('/admin/incidents/{incident}', [App\Http\Controllers\AdminIncidentController::class, 'update'])->name('admin.incidents.update');
     
     // Routes signalements
-    Route::get('/admin/signalements', [App\Http\Controllers\AdminController::class, 'gererSignalements'])->name('admin.signalements.index');
-    Route::get('/admin/signalements/{signalement}', [App\Http\Controllers\AdminController::class, 'afficherSignalement'])->name('admin.signalements.show');
-    Route::put('/admin/signalements/{signalement}', [App\Http\Controllers\AdminController::class, 'updateSignalement'])->name('admin.signalements.update');
-    Route::delete('/admin/signalements/{signalement}', [App\Http\Controllers\AdminController::class, 'destroySignalement'])->name('admin.signalements.destroy');
-    Route::post('/admin/signalements/{signalement}/traiter', [App\Http\Controllers\AdminController::class, 'traiterSignalement'])->name('admin.signalements.traiter');
+    Route::get('/admin/signalements', [App\Http\Controllers\AdminSignalementController::class, 'index'])->name('admin.signalements.index');
+    Route::get('/admin/signalements/{signalement}', [App\Http\Controllers\AdminSignalementController::class, 'show'])->name('admin.signalements.show');
+    Route::put('/admin/signalements/{signalement}', [App\Http\Controllers\AdminSignalementController::class, 'update'])->name('admin.signalements.update');
     
     // Routes plaintes
-    Route::get('/admin/plaintes', [App\Http\Controllers\AdminController::class, 'gererPlaintes'])->name('admin.plaintes.index');
-    Route::get('/admin/plaintes/{plainte}', [App\Http\Controllers\AdminController::class, 'afficherPlainte'])->name('admin.plaintes.show');
-    Route::post('/admin/plaintes/{plainte}/traiter', [App\Http\Controllers\AdminController::class, 'traiterPlainte'])->name('admin.plaintes.traiter');
-    Route::delete('/admin/plaintes/{plainte}', [App\Http\Controllers\AdminController::class, 'destroyPlainte'])->name('admin.plaintes.destroy');
-    Route::post('/admin/plaintes/{plainte}/fermer', [App\Http\Controllers\AdminController::class, 'fermerPlainte'])->name('admin.plaintes.fermer');
+    Route::get('/admin/plaintes', [App\Http\Controllers\AdminPlainteController::class, 'index'])->name('admin.plaintes.index');
+    Route::get('/admin/plaintes/{plainte}', [App\Http\Controllers\AdminPlainteController::class, 'show'])->name('admin.plaintes.show');
+    Route::put('/admin/plaintes/{plainte}', [App\Http\Controllers\AdminPlainteController::class, 'update'])->name('admin.plaintes.update');
     
-    // Routes itinéraires
-    Route::get('/admin/itineraires', [App\Http\Controllers\AdminController::class, 'gererItineraires'])->name('admin.itineraires.index');
-    Route::get('/admin/itineraires/create', [App\Http\Controllers\AdminController::class, 'createItineraire'])->name('admin.itineraires.create');
-    Route::post('/admin/itineraires', [App\Http\Controllers\AdminController::class, 'storeItineraire'])->name('admin.itineraires.store');
-    Route::get('/admin/itineraires/{itineraire}/edit', [App\Http\Controllers\AdminController::class, 'editItineraire'])->name('admin.itineraires.edit');
-    Route::put('/admin/itineraires/{itineraire}', [App\Http\Controllers\AdminController::class, 'updateItineraire'])->name('admin.itineraires.update');
-    Route::delete('/admin/itineraires/{itineraire}', [App\Http\Controllers\AdminController::class, 'destroyItineraire'])->name('admin.itineraires.destroy');
+    // Tournées (itinéraires) et points de collecte
+    Route::resource('/admin/itineraires', App\Http\Controllers\AdminItineraireController::class)
+        ->parameters(['itineraires' => 'itineraire'])->names('admin.itineraires');
+    Route::resource('/admin/points', App\Http\Controllers\AdminPointCollecteController::class)
+        ->except('show')->parameters(['points' => 'point'])->names('admin.points');
     
     // Routes calendrier
-    Route::get('/admin/calendrier', [App\Http\Controllers\AdminController::class, 'gererCalendrier'])->name('admin.calendrier.index');
-    Route::get('/admin/calendrier/create', [App\Http\Controllers\AdminController::class, 'createCalendrier'])->name('admin.calendrier.create');
-    Route::post('/admin/calendrier', [App\Http\Controllers\AdminController::class, 'storeCalendrier'])->name('admin.calendrier.store');
+    Route::resource('/admin/calendrier', App\Http\Controllers\AdminCalendrierController::class)
+        ->except('show')->parameters(['calendrier' => 'calendrier'])->names('admin.calendrier');
     
-    // Routes supervision
-    Route::get('/admin/supervision', [App\Http\Controllers\AdminController::class, 'superviserOperations'])->name('admin.supervision.index');
+    // Carte de la commune et rapports d'activité
+    Route::get('/admin/carte', [App\Http\Controllers\AdminCarteController::class, 'index'])->name('admin.carte');
+    Route::get('/admin/rapports', [App\Http\Controllers\AdminRapportController::class, 'index'])->name('admin.rapports');
+    Route::get('/admin/rapports/export/{jeu}', [App\Http\Controllers\AdminRapportController::class, 'exporter'])
+        ->whereIn('jeu', ['signalements', 'demandes', 'plaintes', 'passages'])->name('admin.rapports.export');
     
     // Routes notifications admin
     Route::get('/admin/notifications', [App\Http\Controllers\AdminNotificationController::class, 'index'])->name('admin.notifications.index');
     Route::get('/admin/notifications/create', [App\Http\Controllers\AdminNotificationController::class, 'create'])->name('admin.notifications.create');
     Route::post('/admin/notifications', [App\Http\Controllers\AdminNotificationController::class, 'store'])->name('admin.notifications.store');
-    Route::get('/admin/notifications/{notification}', [App\Http\Controllers\AdminNotificationController::class, 'show'])->name('admin.notifications.show');
+    Route::get('/admin/notifications/{notification}/ouvrir', [App\Http\Controllers\AdminNotificationController::class, 'ouvrir'])->name('admin.notifications.ouvrir');
+    Route::post('/admin/notifications/tout-lu', [App\Http\Controllers\AdminNotificationController::class, 'toutMarquerLu'])->name('admin.notifications.tout-lu');
     Route::delete('/admin/notifications/{notification}', [App\Http\Controllers\AdminNotificationController::class, 'destroy'])->name('admin.notifications.destroy');
     Route::get('/admin/notifications/urgence/create', [App\Http\Controllers\AdminNotificationController::class, 'createUrgence'])->name('admin.notifications.urgence');
     Route::post('/admin/notifications/urgence', [App\Http\Controllers\AdminNotificationController::class, 'storeUrgence'])->name('admin.notifications.store-urgence');
@@ -214,9 +166,16 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/messages/{message}', [App\Http\Controllers\MessageController::class, 'destroy'])->name('messages.destroy');
 });
 
-// Routes d'inscription
-Route::get('/register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register']);
+// Inscription et mot de passe oublié (visiteurs non connectés, envois limités contre les abus)
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register'])->middleware('throttle:5,10');
+
+    Route::get('/mot-de-passe-oublie', [App\Http\Controllers\Auth\MotDePasseOublieController::class, 'demande'])->name('password.request');
+    Route::post('/mot-de-passe-oublie', [App\Http\Controllers\Auth\MotDePasseOublieController::class, 'envoyerLien'])->middleware('throttle:5,10')->name('password.email');
+    Route::get('/reinitialiser-mot-de-passe/{token}', [App\Http\Controllers\Auth\MotDePasseOublieController::class, 'formulaire'])->name('password.reset');
+    Route::post('/reinitialiser-mot-de-passe', [App\Http\Controllers\Auth\MotDePasseOublieController::class, 'reinitialiser'])->middleware('throttle:10,10')->name('password.update');
+});
 
 // Route de redirection après connexion
 Route::get('/dashboard', function () {
@@ -240,19 +199,19 @@ Route::get('/dashboard', function () {
 
 // Routes pour le profil et les paramètres (authentifiées)
 Route::middleware('auth')->group(function () {
+    // Profil
+    Route::get('/profil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profil', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profil/photo', [ProfileController::class, 'destroyPhoto'])->name('profile.photo.destroy');
+
     // Paramètres
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/appearance', [SettingsController::class, 'updateAppearance'])->name('settings.appearance.update');
-    Route::put('/settings/notifications', [SettingsController::class, 'updateNotifications'])->name('settings.notifications.update');
-    
-    // Authentification à deux facteurs
-    Route::get('/two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
-    Route::get('/two-factor/enable', [TwoFactorController::class, 'show'])->name('two-factor.enable.get');
-    Route::post('/two-factor/enable', [TwoFactorController::class, 'enable'])->name('two-factor.enable');
-    Route::post('/two-factor/confirm', [TwoFactorController::class, 'confirm'])->name('two-factor.confirm');
-    Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->name('two-factor.disable');
-    Route::get('/two-factor/recovery-codes', [TwoFactorController::class, 'showRecoveryCodes'])->name('two-factor.recovery-codes');
-    Route::post('/two-factor/recovery-codes/regenerate', [TwoFactorController::class, 'regenerateRecoveryCodes'])->name('two-factor.recovery-codes.regenerate');
+    Route::put('/settings/notifications', [SettingsController::class, 'updateNotifications'])->name('settings.notifications');
+    Route::get('/settings/mes-donnees', [SettingsController::class, 'exporterDonnees'])->name('settings.donnees');
+    Route::delete('/settings/compte', [SettingsController::class, 'supprimerCompte'])->name('settings.compte.destroy');
+    Route::put('/settings/mot-de-passe', [SettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::delete('/settings/appareils', [SettingsController::class, 'destroyOtherSessions'])->name('settings.sessions.destroy');
 });
 
 /*
@@ -285,17 +244,6 @@ Route::prefix('citoyen')->name('citoyen.')->middleware(['auth', 'role:citoyen'])
     
     // Calendrier
     Route::get('/calendrier', [CitoyenController::class, 'consulterCalendrier'])->name('calendrier.index');
-    Route::get('/calendrier/prochaines-collectes', [CitoyenController::class, 'prochainesCollectes'])->name('calendrier.prochaines');
-    
-    // Rappels automatiques
-    Route::get('/rappels', [App\Http\Controllers\RappelController::class, 'index'])->name('rappels.index');
-    Route::get('/rappels/create', [App\Http\Controllers\RappelController::class, 'create'])->name('rappels.create');
-    Route::post('/rappels', [App\Http\Controllers\RappelController::class, 'store'])->name('rappels.store');
-    Route::get('/rappels/{rappel}', [App\Http\Controllers\RappelController::class, 'show'])->name('rappels.show');
-    Route::get('/rappels/{rappel}/edit', [App\Http\Controllers\RappelController::class, 'edit'])->name('rappels.edit');
-    Route::put('/rappels/{rappel}', [App\Http\Controllers\RappelController::class, 'update'])->name('rappels.update');
-    Route::delete('/rappels/{rappel}', [App\Http\Controllers\RappelController::class, 'destroy'])->name('rappels.destroy');
-    Route::post('/rappels/{rappel}/toggle', [App\Http\Controllers\RappelController::class, 'toggle'])->name('rappels.toggle');
     
     // Campagnes de sensibilisation
     Route::get('/campagnes', [CitoyenController::class, 'indexCampagnes'])->name('campagnes.index');
@@ -307,7 +255,6 @@ Route::prefix('citoyen')->name('citoyen.')->middleware(['auth', 'role:citoyen'])
     Route::post('/notifications/{notificationId}/marquer-lue', [CitoyenController::class, 'marquerNotificationLue'])->name('notifications.marquer-lue');
     Route::post('/notifications/marquer-toutes-lues', [CitoyenController::class, 'marquerToutesNotificationsLues'])->name('notifications.marquer-toutes-lues');
     
-    Route::get('/campagnes/type/{type}', [App\Http\Controllers\CampagneController::class, 'parType'])->name('campagnes.type');
     Route::get('/notifications/nombre-non-lues', [CitoyenController::class, 'nombreNotificationsNonLues'])->name('notifications.nombre-non-lues');
     
     // Profil
